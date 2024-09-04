@@ -1,8 +1,6 @@
 package main
 
 import (
-
-	"github.com/lcisec/vault"
 )
 
 func main () {
