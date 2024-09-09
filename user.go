@@ -1,12 +1,17 @@
 package vault
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // The User struct holds the minimum data we need to identify our user. It is
 // stored in the database encrypted with the derived AuthKey.
 type User struct {
 	UserId        UserToken
 	UserName      string
 	KeysetId      KeysetToken
-	RecoveryId    KeysetToken
+	RecoveryKeyId KeysetToken
 	MetadataId    MetadataToken
 }
 
@@ -18,7 +23,7 @@ func (u *User) bytes(crypt crypter) ([]byte, error) {
 		return encrypted, fmt.Errorf("could not User.Bytes: %v", err)
 	}
 
-	encrypted, err := crypt.Encrypt(bytes, u.UserId)
+	encrypted, err = crypt.Encrypt(bytes, []byte(u.UserId.String()))
 	if err != nil {
 		return encrypted, fmt.Errorf("could not User.Bytes: %v", err)
 	}
@@ -29,7 +34,7 @@ func (u *User) bytes(crypt crypter) ([]byte, error) {
 // Create adds a new User, as encrypted bytes, to the given storer.
 func (u *User) Create(store storer, crypt crypter, aid AuthToken) error {
 	userId := store.GetUserId(u.UserName)
-	if userId != "" {
+	if userId.String() != "" {
 		return fmt.Errorf("could not User.Create: user already exists")
 	}
 
@@ -40,7 +45,7 @@ func (u *User) Create(store storer, crypt crypter, aid AuthToken) error {
 func (u *User) Save(store storer, crypt crypter, aid AuthToken) error {
 	bytes, err := u.bytes(crypt)
 	if err != nil {
-		return fmt.Error("could not User.Save: %v", err)
+		return fmt.Errorf("could not User.Save: %v", err)
 	}
 
 	err = store.SaveUser(aid, bytes)
@@ -54,14 +59,13 @@ func (u *User) Save(store storer, crypt crypter, aid AuthToken) error {
 // NewUser takes a username and AuthKey and creates a new User object.
 func NewUser(username string) User {
 	return User{
-		UserId: NewUserToken(),
-		UserName: username,
-		KeySetId: NewKeysetToken(),
+		UserId:        NewUserToken(),
+		UserName:      username,
+		KeysetId:      NewKeysetToken(),
 		RecoveryKeyId: NewKeysetToken(),
-		MetadataId: NewMetadataToken(),
+		MetadataId:    NewMetadataToken(),
 	}
 }
-
 
 // newUserFromBytes creates a new User object from encrypted bytes.
 func newUserFromBytes(crypt crypter, encrypted []byte, ad []byte) (User, error) {
@@ -72,11 +76,11 @@ func newUserFromBytes(crypt crypter, encrypted []byte, ad []byte) (User, error) 
 		return user, err
 	}
 
-	err = json.Unmarshal(&user, plaintext)
+	err = json.Unmarshal(plaintext, &user)
 	if err != nil {
 		return user, err
 	}
-	
+
 	return user, nil
 }
 
@@ -88,10 +92,10 @@ func NewUserFromStore(store storer, crypt crypter, aid AuthToken, uid UserToken)
 		return user, fmt.Errorf("could not NewUserFromStore: %v", err)
 	}
 
-	user, err = newUserFromBytes(crypt, bytes, uid)
+	user, err = newUserFromBytes(crypt, bytes, []byte(uid.String()))
 	if err != nil {
 		return user, fmt.Errorf("could not NewUserFromStore: %v", err)
 	}
 
-	return user nil
+	return user, nil
 }

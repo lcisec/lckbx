@@ -2,36 +2,39 @@ package vault
 
 import (
 	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
+const (
+	nonceSize = 24
+)
+
 // The XChaCha struct encrypts and decrypts data using XChaCha20Poly1305.
 type XChaCha struct {
-	aead cipher.AEAD
+	aead      cipher.AEAD
+	nonceSize int
 }
 
 func (x *XChaCha) Decrypt(ciphertext, ad []byte) ([]byte, error) {
 	var plaintext []byte
 
 	if ciphertext == nil {
-		return plaintext, nil
+		return plaintext, fmt.Errorf("could not XChaCha.Decrypt: ciphertext is nil")
 	}
 
-	if len(ciphertext) < x.aead.NonceSize() {
+	if len(ciphertext) < x.nonceSize {
 		return plaintext, fmt.Errorf("could not XChaCha.Decrypt: ciphertext is too short")
 	}
 
-	if len(ad) == 0 {
+	if (ad == nil) || (len(ad) == 0) {
 		return plaintext, fmt.Errorf("could not XChaCha.Decrypt: missing authenticated data")
 	}
 
 	// Split nonce and ciphertext.
-	nonce := ciphertext[:x.aead.NonceSize()]
-	encrypted := ciphertext[x.aead.NonceSize():]
+	nonce := ciphertext[:x.nonceSize]
+	encrypted := ciphertext[x.nonceSize:]
 
 	// Decrypt the message and check it wasn't tampered with.
 	plaintext, err := x.aead.Open(nil, nonce, encrypted, ad)
@@ -42,7 +45,6 @@ func (x *XChaCha) Decrypt(ciphertext, ad []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-
 func (x *XChaCha) Encrypt(plaintext, ad []byte) ([]byte, error) {
 	var ciphertext []byte
 
@@ -50,24 +52,28 @@ func (x *XChaCha) Encrypt(plaintext, ad []byte) ([]byte, error) {
 		return ciphertext, fmt.Errorf("could not XChaCha.Encrypt: missing authenticated data")
 	}
 
-	nonce := newRandomBytes(x.aead.NonceSize())
+	nonce := newNonceBytes()
 	encrypted := x.aead.Seal(nil, nonce, plaintext, ad)
-	ciphertext := append(nonce, encrypted...)
+	ciphertext = append(nonce, encrypted...)
 
 	return ciphertext, nil
 }
 
-
 // NewV1Crypter creates a new crypter based on the XChaCha20Poly1305 cipher.
-func NewV1Crypter(key CryptKey) XChaCha {
-	var c XChaCha20Poly1305
+func NewV1Crypter(key []byte) XChaCha {
+	var c XChaCha
+
+	if len(key) < keySize {
+		panic(fmt.Sprintf("could not NewV1Crypter: key is too short"))
+	}
 
 	aead, err := chacha20poly1305.NewX(key[:])
 	if err != nil {
-		return panic("could not NewXChaCha20Poly1305: %v", err)
+		panic(fmt.Sprintf("could not NewV1Crypter: %v", err))
 	}
 
 	c.aead = aead
+	c.nonceSize = nonceSize
 
 	return c
 }

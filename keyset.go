@@ -2,6 +2,8 @@ package vault
 
 import (
 	"encoding/json"
+	"fmt"
+	"sync"
 )
 
 // keysetItem stores a BaseKey and the number of Items encrypted with that
@@ -21,24 +23,24 @@ type KeysetItem struct {
 // https://bughunters.google.com/blog/6182336647790592/cryptographic-agility-and-key-rotation
 type Keyset struct {
 	KeysetId KeysetToken
-	latest   VersionToken
-	mutex    &sync.RWMutex
-	keys     map[string]keysetItem
+	Latest   VersionToken
+	mutex    *sync.RWMutex
+	Keys     map[string]KeysetItem
 }
 
 // AddKey adds a new BaseKey to the Keyset and updates the Latest value to
 // reflect the new version.
-func (k *Keyset) AddKey(k BaseKey) VersionToken {
+func (k *Keyset) AddKey(bk BaseKey) VersionToken {
 	version := NewVersionToken()
-	ksItem := keysetItem{
-		key: k
-		count: 0
+	ksItem := KeysetItem{
+		Key:   bk,
+		Count: 0,
 	}
 
-	mutex.RWLock()
-	k.keys[version.String()] = ksItem
-	k.latest = version
-	mutex.RWUnlock()
+	k.mutex.Lock()
+	k.Keys[version.String()] = ksItem
+	k.Latest = version
+	k.mutex.Unlock()
 
 	return version
 }
@@ -55,32 +57,32 @@ func (k *Keyset) DeleteKey(v VersionToken) error {
 		return fmt.Errorf("could not Keyset.DeleteKey: key is still in use")
 	}
 
-	mutex.RWLock()
-	delete(k.keys. v.String())
-	mutex.RWUnlock()
+	k.mutex.Lock()
+	delete(k.Keys, v.String())
+	k.mutex.Unlock()
+
+	return nil
 }
 
+// GetKey returns the KeysetItem, as identified by the VersionToken, if it exists.
+func (k *Keyset) GetKey(v VersionToken) (KeysetItem, error) {
+	var ki KeysetItem
 
-// GetKey returns the BaseKey, as identified by the VersionToken, if it exists.
-func (k *Keyset) GetKey(v VersionToken) (BaseKey, error) {
-	var bk BaseKey
-
-	mutex.RWLock()
-	bk, ok := k.Get(v.String())
-	mutex.RWUnlock()
+	k.mutex.RLock()
+	ki, ok := k.Keys[v.String()]
+	k.mutex.RUnlock()
 
 	if !ok {
-		return bk, fmt.Errorf("could not Keyset.GetKey: key not found") 
+		return ki, fmt.Errorf("could not Keyset.GetKey: KeysetItem not found")
 	}
 
-	bk, nil
+	return ki, nil
 }
 
 // GetLatestKey returns the most recently generated BaseKey.
-func (k *Keyset) GetLatestKey() {
-	return k.GetKey(k.latest)
+func (k *Keyset) GetLatestKey() (KeysetItem, error) {
+	return k.GetKey(k.Latest)
 }
-
 
 // bytes returns the Keyset as encrypted bytes using the given crypter.
 func (k *Keyset) bytes(crypt crypter) ([]byte, error) {
@@ -91,7 +93,7 @@ func (k *Keyset) bytes(crypt crypter) ([]byte, error) {
 		return encrypted, err
 	}
 
-	encrypted, err := crypt.Encrypt(bytes, k.KeySetId)
+	encrypted, err = crypt.Encrypt(bytes, []byte(k.KeysetId.String()))
 	if err != nil {
 		return encrypted, err
 	}
@@ -100,10 +102,10 @@ func (k *Keyset) bytes(crypt crypter) ([]byte, error) {
 }
 
 // Save stores the Keyset as encrypted bytes in the given storer.
-func (k *Keyset) Save(ksid KeysetToken, store storer, crypt crypter) error {
+func (k *Keyset) Save(store storer, crypt crypter, ksid KeysetToken) error {
 	bytes, err := k.bytes(crypt)
 	if err != nil {
-		return fmt.Error("could not Keyset.Save: %v", err)
+		return fmt.Errorf("could not Keyset.Save: %v", err)
 	}
 
 	err = store.SaveKeyset(ksid, bytes)
@@ -115,14 +117,16 @@ func (k *Keyset) Save(ksid KeysetToken, store storer, crypt crypter) error {
 }
 
 // NewKeyset creates a new Keyset object with it's first BaseKey.
-func NewKeyset() Keyset {
+func NewKeyset(kid KeysetToken) Keyset {
 	ks := Keyset{
-		KeysetId: NewKeysetToken(),
-		mutex: &sync.RWMutex{},
-		Keys: make(map[string]BaseKey)
+		KeysetId: kid,
+		mutex:    &sync.RWMutex{},
+		Keys:     make(map[string]KeysetItem),
 	}
 
 	ks.AddKey(newBaseKey())
+
+	return ks
 }
 
 // newKeysetFromBytes creates a new Keyset object from encrypted bytes.
@@ -134,11 +138,11 @@ func newKeysetFromBytes(crypt crypter, encrypted []byte, ad []byte) (Keyset, err
 		return ks, fmt.Errorf("could not NewKeysetFromBytes: %v", err)
 	}
 
-	err = json.Unmarshal(&ks, plaintext)
+	err = json.Unmarshal(plaintext, &ks)
 	if err != nil {
 		return ks, fmt.Errorf("could not NewKeysetFromBytes: %v", err)
 	}
-	
+
 	return ks, nil
 }
 
@@ -147,10 +151,10 @@ func NewKeysetFromStore(store storer, crypt crypter, kid KeysetToken) (Keyset, e
 
 	bytes, err := store.GetKeyset(kid)
 	if err != nil {
-		return user, fmt.Errorf("could not NewKeysetFromStore: %v", err)
+		return ks, fmt.Errorf("could not NewKeysetFromStore: %v", err)
 	}
 
-	ks, err = newKeysetFromBytes(crypt, bytes, kid)
+	ks, err = newKeysetFromBytes(crypt, bytes, []byte(kid.String()))
 	if err != nil {
 		return ks, fmt.Errorf("could not NewNewsetFromStore: %v", err)
 	}

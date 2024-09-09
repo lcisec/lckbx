@@ -6,14 +6,15 @@ package vault
 
 import (
 	"encoding/base32"
+	"fmt"
 	"strings"
 )
 
 const (
-	keySize = 32
-	basePrefix = "bk_"
-	crypPrefix = "ck_"
-	authPrefix = "ak_"
+	keySize        = 32
+	baseKeyPrefix  = "bk_"
+	cryptKeyPrefix = "ck_"
+	authKeyPrefix  = "ak_"
 )
 
 // keyEncoder is used to encoded and decode our keys using a standard
@@ -30,8 +31,8 @@ type BaseKey [keySize]byte
 // String converts a BaseKey to a string.
 func (b BaseKey) String() string {
 	token := tokenEncoder.EncodeToString(b[:])
-	
-	return fmt.Sprintf("%s_%s", basePrefix, token)
+
+	return fmt.Sprintf("%s_%s", baseKeyPrefix, token)
 }
 
 // parseBaseKey takes a string in the form of prefix_base32 and parses it into
@@ -39,11 +40,11 @@ func (b BaseKey) String() string {
 func parseBaseKey(s string) (BaseKey, error) {
 	var bk BaseKey
 
-	if !strings.HasPrefix(s, basePrefix) {
-		return bk fmt.Errorf("could not parseBaseKey: invalid prefix")
+	if !strings.HasPrefix(s, baseKeyPrefix) {
+		return bk, fmt.Errorf("could not parseBaseKey: invalid prefix")
 	}
 
-	s = strings.TrimPrefix(s, basePrefix)
+	s = strings.TrimPrefix(s, baseKeyPrefix)
 
 	data, err := tokenEncoder.DecodeString(s)
 	if err != nil {
@@ -64,11 +65,10 @@ func newBaseKey() BaseKey {
 	var bk BaseKey
 
 	bytes := newKeyBytes()
-	copy(bk[:], bytes)
+	copy(bk[:], bytes[:])
 
 	return bk
 }
-
 
 /*
   Begin CryptKey definition
@@ -80,20 +80,20 @@ type CryptKey [keySize]byte
 // String converts a CryptKey to a string.
 func (c CryptKey) String() string {
 	token := tokenEncoder.EncodeToString(c[:])
-	
-	return fmt.Sprintf("%s_%s", crypPrefix, token)
+
+	return fmt.Sprintf("%s_%s", cryptKeyPrefix, token)
 }
 
 // parseCryptKey takes a string in the form of prefix_base32 and parses it into
 // CryptKey.
-func parseCryptKey(s) (CryptKey, error) {
+func parseCryptKey(s string) (CryptKey, error) {
 	var ck CryptKey
 
-	if !strings.HasPrefix(s, crypPrefix) {
-		return ck fmt.Errorf("could not parseCryptKey: invalid prefix")
+	if !strings.HasPrefix(s, cryptKeyPrefix) {
+		return ck, fmt.Errorf("could not parseCryptKey: invalid prefix")
 	}
 
-	s = strings.TrimPrefix(s, crypPrefix)
+	s = strings.TrimPrefix(s, cryptKeyPrefix)
 
 	data, err := tokenEncoder.DecodeString(s)
 	if err != nil {
@@ -110,15 +110,14 @@ func parseCryptKey(s) (CryptKey, error) {
 }
 
 // newCryptKey generates a random CryptKey
-func newCryptKey() CryptKey {
+func NewCryptKey() CryptKey {
 	var ck CryptKey
 
 	bytes := newKeyBytes()
-	copy(ck[:], bytes)
+	copy(ck[:], bytes[:])
 
 	return ck
 }
-
 
 /*
   Begin AuthKey definition
@@ -130,20 +129,20 @@ type AuthKey [keySize]byte
 // String converts an AuthKey to a string.
 func (a AuthKey) String() string {
 	token := tokenEncoder.EncodeToString(a[:])
-	
-	return fmt.Sprintf("%s_%s", authPrefix, token)
+
+	return fmt.Sprintf("%s_%s", authKeyPrefix, token)
 }
 
 // parseAuthKey takes a string in the form of prefix_base32 and parses it into
 // AuthKey.
-func parseAuthKey(s) (AuthKey, error) {
+func parseAuthKey(s string) (AuthKey, error) {
 	var ak AuthKey
 
-	if !strings.HasPrefix(s, authPrefix) {
-		return ak fmt.Errorf("could not parseAuthKey: invalid prefix")
+	if !strings.HasPrefix(s, authKeyPrefix) {
+		return ak, fmt.Errorf("could not parseAuthKey: invalid prefix")
 	}
 
-	s = strings.TrimPrefix(s, authPrefix)
+	s = strings.TrimPrefix(s, authKeyPrefix)
 
 	data, err := tokenEncoder.DecodeString(s)
 	if err != nil {

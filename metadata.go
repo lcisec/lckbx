@@ -1,28 +1,30 @@
 package vault
 
 import (
+	"encoding/json"
+	"fmt"
 	"sync"
 )
 
 type ItemMetadata struct {
 	ItemId       ItemToken
 	Name         string
-	keyVersion   VersionToken
-	cryptVersion VersionToken
+	KeyVersion   VersionToken
+	CryptVersion VersionToken
 }
 
 func NewItemMetadata(name string, kv, cv VersionToken) ItemMetadata {
 	return ItemMetadata{
-		ItemId: NewItemToken(),
-		Name: name,
-		keyVersion: kv,
+		ItemId:       NewItemToken(),
+		Name:         name,
+		KeyVersion:   kv,
 		CryptVersion: cv,
 	}
 }
 
 type Metadata struct {
 	MetadataId MetadataToken
-	mutex      &sync.RWMutex
+	mutex      *sync.RWMutex
 	Items      map[string]ItemMetadata
 }
 
@@ -34,7 +36,7 @@ func (m *Metadata) AddItem(i ItemMetadata) {
 
 func (m *Metadata) DeleteItem(iid ItemToken) {
 	m.mutex.Lock()
-	delete(m.Items iid.String())
+	delete(m.Items, iid.String())
 	m.mutex.Unlock()
 }
 
@@ -42,16 +44,15 @@ func (m *Metadata) GetItem(iid ItemToken) (ItemMetadata, error) {
 	var item ItemMetadata
 
 	m.mutex.RLock()
-	item, ok := m.Get(iid.String())
+	item, ok := m.Items[iid.String()]
 	m.mutex.RUnlock()
 
 	if !ok {
-		return item, fmt.Errorf("could not Metadata.GetItem: item not found") 
+		return item, fmt.Errorf("could not Metadata.GetItem: item not found")
 	}
 
-	item, nil
+	return item, nil
 }
-
 
 // bytes returns the Metadata as encrypted bytes using the given crypter.
 func (m *Metadata) bytes(crypt crypter) ([]byte, error) {
@@ -62,7 +63,7 @@ func (m *Metadata) bytes(crypt crypter) ([]byte, error) {
 		return encrypted, err
 	}
 
-	encrypted, err := crypt.Encrypt(bytes, m.MetadataId)
+	encrypted, err = crypt.Encrypt(bytes, []byte(m.MetadataId.String()))
 	if err != nil {
 		return encrypted, err
 	}
@@ -74,7 +75,7 @@ func (m *Metadata) bytes(crypt crypter) ([]byte, error) {
 func (m *Metadata) Save(store storer, crypt crypter) error {
 	bytes, err := m.bytes(crypt)
 	if err != nil {
-		return fmt.Error("could not Metadata.Save: %v", err)
+		return fmt.Errorf("could not Metadata.Save: %v", err)
 	}
 
 	err = store.SaveMetadata(m.MetadataId, bytes)
@@ -86,11 +87,11 @@ func (m *Metadata) Save(store storer, crypt crypter) error {
 }
 
 // NewMetadata creates a new Metadata object.
-func NewMetadata() Metadata {
+func NewMetadata(mid MetadataToken) Metadata {
 	return Metadata{
-		MetadataId: NewMetadataToken(),
-		mutex: &sync.RWMutex{}
-		Items: make(map[string]ItemMetadata)
+		MetadataId: mid,
+		mutex:      &sync.RWMutex{},
+		Items:      make(map[string]ItemMetadata),
 	}
 }
 
@@ -103,11 +104,11 @@ func newMetadataFromBytes(crypt crypter, encrypted []byte, ad []byte) (Metadata,
 		return md, err
 	}
 
-	err = json.Unmarshal(&md, plaintext)
+	err = json.Unmarshal(plaintext, &md)
 	if err != nil {
 		return md, err
 	}
-	
+
 	return md, nil
 }
 
@@ -116,14 +117,13 @@ func NewMetadataFromStore(store storer, crypt crypter, mid MetadataToken) (Metad
 
 	bytes, err := store.GetMetadata(mid)
 	if err != nil {
-		return user, fmt.Errorf("could not NewMetadataFromStore: %v", err)
+		return md, fmt.Errorf("could not NewMetadataFromStore: %v", err)
 	}
 
-	md, err = newMetadataFromBytes(crypt, bytes, mid)
+	md, err = newMetadataFromBytes(crypt, bytes, []byte(mid.String()))
 	if err != nil {
 		return md, fmt.Errorf("could not NewMetadataFromStore: %v", err)
 	}
+
+	return md, nil
 }
-
-
-

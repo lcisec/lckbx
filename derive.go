@@ -1,18 +1,24 @@
 package vault
 
+import (
+	"fmt"
+	"io"
+
+	"golang.org/x/crypto/argon2"
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/text/unicode/norm"
+)
+
 const (
 	minPassphraseLength = 15
 )
 
-// var (
-// 	cryptInfo = fmt.Sprintf("This key will be  used to encrypt items.")
-// 	metaInfo = fmt.Sprintf("This key will be used to encrypt metadata.")
-// )
-
 type argonBlakeDerive struct {
-	time int
-	memory  uint32
-	threads uint8
+	time      uint32
+	memory    uint32
+	threads   uint8
+	authInfo  []byte
+	cryptInfo []byte
 }
 
 // Slow takes a username and passphrase and returns a symmetric key Token.
@@ -29,15 +35,10 @@ func (a *argonBlakeDerive) DeriveBaseKey(username, passphrase string) (BaseKey, 
 	}
 
 	// Hash our username to use it as a salt
-	h, err := blake2b.New256()
-	if err != nil {
-		return bk, fmt.Errorf("could not DeriveBaseKey: %v", err)
-	}
-
-	salt := h.Write(username).Sum(nil)
+	salt := blake2b.Sum256([]byte(username))
 
 	// Derive our key
-	key := argon2.IDKey([]byte(passphrase), salt, d.time, d.memory, d.threads, keySize)
+	key := argon2.IDKey([]byte(passphrase), salt[:], a.time, a.memory, a.threads, keySize)
 
 	copy(bk[:], key)
 
@@ -45,7 +46,7 @@ func (a *argonBlakeDerive) DeriveBaseKey(username, passphrase string) (BaseKey, 
 }
 
 // DeriveAuthKey takes a BaseKey and derives an AuthKey.
-func (d *argonBlakeDerive) DeriveAuthKey(baseKey BaseKey) (AuthKey, error) {
+func (a *argonBlakeDerive) DeriveAuthKey(baseKey BaseKey) (AuthKey, error) {
 	var ak AuthKey
 
 	kdf, err := blake2b.NewXOF(keySize, baseKey[:])
@@ -53,8 +54,7 @@ func (d *argonBlakeDerive) DeriveAuthKey(baseKey BaseKey) (AuthKey, error) {
 		return ak, fmt.Errorf("could not DeriveAuthKey: %v", err)
 	}
 
-	authInfo = fmt.Sprintf("This key will be used for authentication.")
-	kdf.Write([]byte(authInfo))
+	kdf.Write(a.authInfo)
 
 	_, err = io.ReadFull(kdf, ak[:])
 	if err != nil {
@@ -65,7 +65,7 @@ func (d *argonBlakeDerive) DeriveAuthKey(baseKey BaseKey) (AuthKey, error) {
 }
 
 // DeriveAuthToken takes a BaseKey and a UserToken and derives an AuthToken
-func (d *argonBlakeDerive) DeriveAuthToken(baseKey BaseKey, ut UserToken) (AuthToken, error) {
+func (a *argonBlakeDerive) DeriveAuthToken(baseKey BaseKey, ut UserToken) (AuthToken, error) {
 	var at AuthToken
 
 	kdf, err := blake2b.NewXOF(tokenSize, baseKey[:])
@@ -83,14 +83,17 @@ func (d *argonBlakeDerive) DeriveAuthToken(baseKey BaseKey, ut UserToken) (AuthT
 	return at, nil
 }
 
-
 // DeriveCryptKey takes a BaseKey and derives a CryptKey.
-func (d *argonBlakeDerive) DeriveCryptKey(baseKey BaseKey, salt []byte) (CryptKey, error) {
+func (a *argonBlakeDerive) DeriveCryptKey(baseKey BaseKey, salt []byte) (CryptKey, error) {
 	var ck CryptKey
 
 	kdf, err := blake2b.NewXOF(keySize, baseKey[:])
 	if err != nil {
 		return ck, fmt.Errorf("could not DeriveCryptKey: %v", err)
+	}
+
+	if salt == nil {
+		salt = a.cryptInfo
 	}
 
 	kdf.Write(salt)
@@ -103,12 +106,13 @@ func (d *argonBlakeDerive) DeriveCryptKey(baseKey BaseKey, salt []byte) (CryptKe
 	return ck, nil
 }
 
-
 // NewV1Deriver returns a deriver based on Argon2 and Blake2.
 func NewV1Deriver() argonBlakeDerive {
 	return argonBlakeDerive{
-		time: 1,
-		memory: 2 * 1024 * 1024,
-		threads: 4,
+		time:      1,
+		memory:    2 * 1024 * 1024,
+		threads:   4,
+		authInfo:  []byte("This key will be used for authentication."),
+		cryptInfo: []byte("This key will be used for encryption."),
 	}
 }

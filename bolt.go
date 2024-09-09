@@ -1,21 +1,19 @@
 package vault
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/boltdb/bolt"
 )
 
 const (
-	userBucket = "user"
-	authBucket = "auth"
-	keysetBucket = "keyset"
+	userBucket     = "user"
+	authBucket     = "auth"
+	keysetBucket   = "keyset"
 	metadataBucket = "metadata"
-	itemBucket = "item"
+	itemBucket     = "item"
 )
 
 var (
@@ -35,7 +33,7 @@ func (s *Store) initialize() error {
 		return err
 	}
 
-	err := s.createBucket(authBucket)
+	err = s.createBucket(authBucket)
 	if err != nil {
 		return err
 	}
@@ -113,8 +111,8 @@ func (s *Store) delete(bucket, key string) error {
 func (s *Store) GetUser(aid AuthToken) ([]byte, error) {
 	var user []byte
 
-	user := s.read(authBucket, aid)
-	if data == nil {
+	user = s.read(authBucket, aid.String())
+	if user == nil {
 		return user, fmt.Errorf("could not GetUser: user %s not found", aid)
 	}
 
@@ -124,16 +122,16 @@ func (s *Store) GetUser(aid AuthToken) ([]byte, error) {
 func (s *Store) GetUserId(username string) []byte {
 	var uid []byte
 
-	uid := s.read(userBucket, username)
+	uid = s.read(userBucket, username)
 	if uid == nil {
-		return byte("")
+		return []byte("")
 	}
 
 	return uid
 }
 
 func (s *Store) SaveUser(aid AuthToken, data []byte) error {
-	err := s.write(authBucket, aid, data)
+	err := s.write(authBucket, aid.String(), data)
 	if err != nil {
 		return fmt.Errorf("could not SaveUser: %v", err)
 	}
@@ -144,16 +142,16 @@ func (s *Store) SaveUser(aid AuthToken, data []byte) error {
 func (s *Store) GetMetadata(mid MetadataToken) ([]byte, error) {
 	var md []byte
 
-	md := s.read(metadataBucket, mid)
+	md = s.read(metadataBucket, mid.String())
 	if md == nil {
-		return user, fmt.Errorf("could not GetMetadata: metadata %s not found", mid)
+		return md, fmt.Errorf("could not GetMetadata: metadata %s not found", mid)
 	}
 
-	return user, nil
+	return md, nil
 }
 
 func (s *Store) SaveMetadata(mid MetadataToken, data []byte) error {
-	err := s.write(metadataBucket, mid, data)
+	err := s.write(metadataBucket, mid.String(), data)
 	if err != nil {
 		return fmt.Errorf("could not SaveMetadata: %v", err)
 	}
@@ -164,16 +162,16 @@ func (s *Store) SaveMetadata(mid MetadataToken, data []byte) error {
 func (s *Store) GetKeyset(kid KeysetToken) ([]byte, error) {
 	var ks []byte
 
-	ks := s.read(keysetBucket, kid)
+	ks = s.read(keysetBucket, kid.String())
 	if ks == nil {
-		return user, fmt.Errorf("could not GetKeyset: keyset %s not found", kid)
+		return ks, fmt.Errorf("could not GetKeyset: keyset %s not found", kid)
 	}
 
 	return ks, nil
 }
 
 func (s *Store) SaveKeyset(kid KeysetToken, data []byte) error {
-	err := s.write(keysetBucket, kid, data)
+	err := s.write(keysetBucket, kid.String(), data)
 	if err != nil {
 		return fmt.Errorf("could not SaveKeyset: %v", err)
 	}
@@ -184,16 +182,16 @@ func (s *Store) SaveKeyset(kid KeysetToken, data []byte) error {
 func (s *Store) GetItem(iid ItemToken) ([]byte, error) {
 	var item []byte
 
-	item := s.read(itemBucket, iid)
+	item = s.read(itemBucket, iid.String())
 	if item == nil {
-		return user, fmt.Errorf("could not GetItem: item %s not found", iid)
+		return item, fmt.Errorf("could not GetItem: item %s not found", iid)
 	}
 
-	return ks, nil
+	return item, nil
 
 }
 func (s *Store) SaveItem(iid ItemToken, data []byte) error {
-	err := s.write(itemBucket, iid, data)
+	err := s.write(itemBucket, iid.String(), data)
 	if err != nil {
 		return fmt.Errorf("could not SaveItem: %v", err)
 	}
@@ -224,8 +222,8 @@ func (s *Store) Close() error {
 }
 
 // Create a new store object with a bolt database located at filePath.
-func NewStore(filePath string) (*Store, error) {
-	var s store
+func NewStore(filePath string) (Store, error) {
+	var s Store
 
 	db, err := bolt.Open(filePath, 0640, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-
 // newKeyBytes returns a byte slice with keySize random bytes.
 func newKeyBytes() [keySize]byte {
 	var bytes [keySize]byte
@@ -30,13 +29,13 @@ func newTokenBytes() [tokenSize]byte {
 	return bytes
 }
 
-// newRandomBytes returns a byte slice with size random bytes.
-func newRandomBytes(size int) []byte {
-	var bytes [size]byte
+// newNonceBytes returns a byte slice with nonceSize random bytes.
+func newNonceBytes() []byte {
+	var bytes [nonceSize]byte
 
 	_, err := rand.Read(bytes[:])
 	if err != nil {
-		panic(fmt.Errorf("Could not newRandomBytes: %v", err))
+		panic(fmt.Errorf("Could not newNonceBytes: %v", err))
 	}
 
 	return bytes[:]

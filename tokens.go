@@ -6,17 +6,17 @@ package vault
 
 import (
 	"encoding/base32"
-	"strings"
+	"fmt"
 )
 
 const (
-	tokenSize = 32
-	itemPrefix = "it_"
-	userPrefix = "ut_"
-	ksetPrefix = "kt_"
-	metaPrefix = "mt_"
-	versPrefix = "vt_"
-	authPrefix = "at_"
+	tokenSize           = 32
+	itemTokenPrefix     = "it_"
+	userTokenPrefix     = "ut_"
+	keysetTokenPrefix   = "kt_"
+	metadataTokenPrefix = "mt_"
+	versionTokenPrefix  = "vt_"
+	authTokenPrefix     = "at_"
 )
 
 // tokenEncoder is used to encoded and decode our tokens using a standard
@@ -29,8 +29,8 @@ type ItemToken [tokenSize]byte
 // String converts a ItemToken object to a string.
 func (i ItemToken) String() string {
 	token := tokenEncoder.EncodeToString(i[:])
-	
-	return fmt.Sprintf("%s_%s", itemPrefix, token)
+
+	return fmt.Sprintf("%s_%s", itemTokenPrefix, token)
 }
 
 // NewItemToken generates a random ItemToken.
@@ -38,11 +38,10 @@ func NewItemToken() ItemToken {
 	var it ItemToken
 
 	bytes := newTokenBytes()
-	copy(it[:], bytes)
+	copy(it[:], bytes[:])
 
 	return it
 }
-
 
 // UserToken represents a user token.
 type UserToken [tokenSize]byte
@@ -50,8 +49,8 @@ type UserToken [tokenSize]byte
 // String converts a UserToken object to a string.
 func (u UserToken) String() string {
 	token := tokenEncoder.EncodeToString(u[:])
-	
-	return fmt.Sprintf("%s_%s", userPrefix, token)
+
+	return fmt.Sprintf("%s_%s", userTokenPrefix, token)
 }
 
 // NewUserToken generates a random UserToken.
@@ -59,11 +58,10 @@ func NewUserToken() UserToken {
 	var ut UserToken
 
 	bytes := newTokenBytes()
-	copy(ut[:], bytes)
+	copy(ut[:], bytes[:])
 
 	return ut
 }
-
 
 // KeysetToken represents a keyset token.
 type KeysetToken [tokenSize]byte
@@ -71,8 +69,8 @@ type KeysetToken [tokenSize]byte
 // String converts a KeysetToken object to a string.
 func (k KeysetToken) String() string {
 	token := tokenEncoder.EncodeToString(k[:])
-	
-	return fmt.Sprintf("%s_%s", ksetPrefix, token)
+
+	return fmt.Sprintf("%s_%s", keysetTokenPrefix, token)
 }
 
 // NewKeysetToken generates a random KeysetToken.
@@ -80,11 +78,10 @@ func NewKeysetToken() KeysetToken {
 	var kt KeysetToken
 
 	bytes := newTokenBytes()
-	copy(kt[:], bytes)
+	copy(kt[:], bytes[:])
 
 	return kt
 }
-
 
 // MetadataToken represents a metadata token.
 type MetadataToken [tokenSize]byte
@@ -92,8 +89,8 @@ type MetadataToken [tokenSize]byte
 // String converts a MetadataToken object to a string.
 func (m MetadataToken) String() string {
 	token := tokenEncoder.EncodeToString(m[:])
-	
-	return fmt.Sprintf("%s_%s", metaPrefix, token)
+
+	return fmt.Sprintf("%s_%s", metadataTokenPrefix, token)
 }
 
 // NewMetadataToken generates a random MetadataToken.
@@ -101,7 +98,7 @@ func NewMetadataToken() MetadataToken {
 	var mt MetadataToken
 
 	bytes := newTokenBytes()
-	copy(mt[:], bytes)
+	copy(mt[:], bytes[:])
 
 	return mt
 }
@@ -112,8 +109,8 @@ type VersionToken [tokenSize]byte
 // String converts a VersionToken object to a string.
 func (v VersionToken) String() string {
 	token := tokenEncoder.EncodeToString(v[:])
-	
-	return fmt.Sprintf("%s_%s", versPrefix, token)
+
+	return fmt.Sprintf("%s_%s", versionTokenPrefix, token)
 }
 
 // NewVersionToken generates a random VersionToken.
@@ -121,7 +118,7 @@ func NewVersionToken() VersionToken {
 	var vt VersionToken
 
 	bytes := newTokenBytes()
-	copy(vt[:], bytes)
+	copy(vt[:], bytes[:])
 
 	return vt
 }
@@ -132,6 +129,6 @@ type AuthToken [tokenSize]byte
 // String converts a AuthToken object to a string.
 func (i AuthToken) String() string {
 	token := tokenEncoder.EncodeToString(i[:])
-	
-	return fmt.Sprintf("%s_%s", authPrefix, token)
+
+	return fmt.Sprintf("%s_%s", authTokenPrefix, token)
 }

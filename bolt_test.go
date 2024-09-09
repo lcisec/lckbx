@@ -1,23 +1,21 @@
 package vault
 
 import (
-	"fmt"
+	"bytes"
 	"os"
-	"sort"
 	"testing"
 )
 
 type storeTestCase struct {
-	bucket: string
-	key:    string
-	value:  string
+	bucket string
+	key    string
+	value  []byte
 }
 
 func TestStore(t *testing.T) {
 	testNewStore(t)
 	testStoreRWD(t)
 }
-
 
 func testNewStore(t *testing.T) {
 	// Open a database in a path that does not exist.
@@ -46,30 +44,30 @@ func testStoreRWD(t *testing.T) {
 	}
 
 	cases := []storeTestCase{
-		{ userBucket, "user1", "value1" },
-		{ authBucket, "auth1", "value1" },
-		{ keysetBucket, "keyset1", "value1" },
-		{ metadataBucket, "metadata1", "value1" },
-		{ itemBucket, "item1", "value1" },
+		{userBucket, "user1", []byte("value1")},
+		{authBucket, "auth1", []byte("value1")},
+		{keysetBucket, "keyset1", []byte("value1")},
+		{metadataBucket, "metadata1", []byte("value1")},
+		{itemBucket, "item1", []byte("value1")},
 	}
 
 	for _, c := range cases {
-		err := s.write([]byte(c.bucket), []byte(c.key), []byte(c.value))
+		err := s.write(c.bucket, c.key, c.value)
 		if err != nil {
 			t.Fatal("testStoreRWD: unexpected error", err)
 		}
 
-		data := s.read([]byte(c.bucket), []byte(c.key))
-		if data != []byte(c.value) {
+		data := s.read(c.bucket, c.key)
+		if !bytes.Equal(data, c.value) {
 			t.Fatal("testStoreRWD: expected", c.value, ", received", string(data))
 		}
 
-		err = s.delete([]byte(c.bucket), []byte(c.key))
+		err = s.delete(c.bucket, c.key)
 		if err != nil {
 			t.Fatal("testStoreRWD: unexpected error", err)
 		}
 
-		data = s.read([]byte(c.bucket), []byte(c.key))
+		data = s.read(c.bucket, c.key)
 		if data != nil {
 			t.Fatal("testStoreRWD: expected nil, received", string(data))
 		}
@@ -77,13 +75,13 @@ func testStoreRWD(t *testing.T) {
 }
 
 func testStoreBackup(t *testing.T) {
-	key := []byte("user1")
+	key := "user1"
 	val := []byte("value1")
 
 	s, _ := NewStore("test.db")
-	
+
 	s.initialize()
-	s.write([]byte(userBucket), key, val)
+	s.write(userBucket, key, val)
 
 	err := s.Backup("backup_test.db")
 	if err != nil {
@@ -97,46 +95,45 @@ func testStoreBackup(t *testing.T) {
 	defer s.Close()
 	defer os.Remove("backup_test.db")
 
-	data := s.read([]byte(userBucket), key)
-	if data != value {
-		t.Fatal("testStoreRWD: expected", string(value), ", received", string(data))
+	data := s.read(userBucket, key)
+	if !bytes.Equal(data, val) {
+		t.Fatal("testStoreRWD: expected", string(val), ", received", string(data))
 	}
 }
 
-func testStoreUser(t *testing.T) {
-	s, _ := NewStore("test.db")
-	defer s.Close()
-	defer os.Remove("test.db")
+// func testStoreUser(t *testing.T) {
+// 	s, _ := NewStore("test.db")
+// 	defer s.Close()
+// 	defer os.Remove("test.db")
 
-	user, err := GetUser(aid AuthToken) ([]byte, error)
-	GetUserId(username string) UserToken
-	SaveUser(aid AuthToken, data []byte) error
-}
+// 	user, err := GetUser(aid AuthToken) ([]byte, error)
+// 	GetUserId(username string) UserToken
+// 	SaveUser(aid AuthToken, data []byte) error
+// }
 
-func testStoreKeyset(t *testing.T) {
-	s, _ := NewStore("test.db")
-	defer s.Close()
-	defer os.Remove("test.db")
+// func testStoreKeyset(t *testing.T) {
+// 	s, _ := NewStore("test.db")
+// 	defer s.Close()
+// 	defer os.Remove("test.db")
 
-	GetKeyset(kid KeysetToken) ([]byte, error)
-	SaveKeyset(kid KeysetToken, data []byte) error
-}
+// 	GetKeyset(kid KeysetToken) ([]byte, error)
+// 	SaveKeyset(kid KeysetToken, data []byte) error
+// }
 
-func testStoreMetadata(t *testing.T) {
-	store, _ := NewStore("test.db")
-	defer store.Close()
-	defer os.Remove("test.db")
+// func testStoreMetadata(t *testing.T) {
+// 	store, _ := NewStore("test.db")
+// 	defer store.Close()
+// 	defer os.Remove("test.db")
 
-	GetMetadata(mid MetadataToken) ([]byte, error)
-	SaveMetadata(mid MetadataToken, data []byte) error
-}
+// 	GetMetadata(mid MetadataToken) ([]byte, error)
+// 	SaveMetadata(mid MetadataToken, data []byte) error
+// }
 
-func testStoreItem(t *testing.T) {
-	store, _ := NewStore("test.db")
-	defer store.Close()
-	defer os.Remove("test.db")
+// func testStoreItem(t *testing.T) {
+// 	store, _ := NewStore("test.db")
+// 	defer store.Close()
+// 	defer os.Remove("test.db")
 
-	GetItem(iid ItemToken) ([]byte, error)
-	SaveItem(iid ItemToken, data []byte) error
-}
-
+// 	GetItem(iid ItemToken) ([]byte, error)
+// 	SaveItem(iid ItemToken, data []byte) error
+// }
