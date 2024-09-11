@@ -17,7 +17,16 @@ const (
 )
 
 var (
-	// BucketNotExist = fmt.Errorf("store: bucket does not exist.")
+	storeBuckets = [5]string{
+		userBucket,
+		authBucket,
+		keysetBucket,
+		metadataBucket,
+		itemBucket,
+	}
+)
+
+var (
 	BucketNotCreated = fmt.Errorf("store: bucket not created.")
 )
 
@@ -28,29 +37,11 @@ type Store struct {
 
 // initialize configures the Bolt database for use as a Store.
 func (s *Store) initialize() error {
-	err := s.createBucket(userBucket)
-	if err != nil {
-		return err
-	}
-
-	err = s.createBucket(authBucket)
-	if err != nil {
-		return err
-	}
-
-	err = s.createBucket(keysetBucket)
-	if err != nil {
-		return err
-	}
-
-	err = s.createBucket(metadataBucket)
-	if err != nil {
-		return err
-	}
-
-	err = s.createBucket(itemBucket)
-	if err != nil {
-		return err
+	for _, bucket := range storeBuckets {
+		err := s.createBucket(bucket)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

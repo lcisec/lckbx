@@ -30,7 +30,7 @@ type ItemToken [tokenSize]byte
 func (i ItemToken) String() string {
 	token := tokenEncoder.EncodeToString(i[:])
 
-	return fmt.Sprintf("%s_%s", itemTokenPrefix, token)
+	return fmt.Sprintf("%s%s", itemTokenPrefix, token)
 }
 
 // NewItemToken generates a random ItemToken.
@@ -50,7 +50,7 @@ type UserToken [tokenSize]byte
 func (u UserToken) String() string {
 	token := tokenEncoder.EncodeToString(u[:])
 
-	return fmt.Sprintf("%s_%s", userTokenPrefix, token)
+	return fmt.Sprintf("%s%s", userTokenPrefix, token)
 }
 
 // NewUserToken generates a random UserToken.
@@ -70,7 +70,7 @@ type KeysetToken [tokenSize]byte
 func (k KeysetToken) String() string {
 	token := tokenEncoder.EncodeToString(k[:])
 
-	return fmt.Sprintf("%s_%s", keysetTokenPrefix, token)
+	return fmt.Sprintf("%s%s", keysetTokenPrefix, token)
 }
 
 // NewKeysetToken generates a random KeysetToken.
@@ -90,7 +90,7 @@ type MetadataToken [tokenSize]byte
 func (m MetadataToken) String() string {
 	token := tokenEncoder.EncodeToString(m[:])
 
-	return fmt.Sprintf("%s_%s", metadataTokenPrefix, token)
+	return fmt.Sprintf("%s%s", metadataTokenPrefix, token)
 }
 
 // NewMetadataToken generates a random MetadataToken.
@@ -110,7 +110,7 @@ type VersionToken [tokenSize]byte
 func (v VersionToken) String() string {
 	token := tokenEncoder.EncodeToString(v[:])
 
-	return fmt.Sprintf("%s_%s", versionTokenPrefix, token)
+	return fmt.Sprintf("%s%s", versionTokenPrefix, token)
 }
 
 // NewVersionToken generates a random VersionToken.
@@ -130,5 +130,15 @@ type AuthToken [tokenSize]byte
 func (i AuthToken) String() string {
 	token := tokenEncoder.EncodeToString(i[:])
 
-	return fmt.Sprintf("%s_%s", authTokenPrefix, token)
+	return fmt.Sprintf("%s%s", authTokenPrefix, token)
+}
+
+// NewAuthToken generates a random AuthToken.
+func NewAuthToken() AuthToken {
+	var at AuthToken
+
+	bytes := newTokenBytes()
+	copy(at[:], bytes[:])
+
+	return at
 }

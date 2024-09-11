@@ -30,9 +30,9 @@ type BaseKey [keySize]byte
 
 // String converts a BaseKey to a string.
 func (b BaseKey) String() string {
-	token := tokenEncoder.EncodeToString(b[:])
+	key := keyEncoder.EncodeToString(b[:])
 
-	return fmt.Sprintf("%s_%s", baseKeyPrefix, token)
+	return fmt.Sprintf("%s%s", baseKeyPrefix, key)
 }
 
 // parseBaseKey takes a string in the form of prefix_base32 and parses it into
@@ -46,7 +46,7 @@ func parseBaseKey(s string) (BaseKey, error) {
 
 	s = strings.TrimPrefix(s, baseKeyPrefix)
 
-	data, err := tokenEncoder.DecodeString(s)
+	data, err := keyEncoder.DecodeString(s)
 	if err != nil {
 		return bk, fmt.Errorf("could not parseBaseKey: %v", err)
 	}
@@ -79,9 +79,9 @@ type CryptKey [keySize]byte
 
 // String converts a CryptKey to a string.
 func (c CryptKey) String() string {
-	token := tokenEncoder.EncodeToString(c[:])
+	key := keyEncoder.EncodeToString(c[:])
 
-	return fmt.Sprintf("%s_%s", cryptKeyPrefix, token)
+	return fmt.Sprintf("%s%s", cryptKeyPrefix, key)
 }
 
 // parseCryptKey takes a string in the form of prefix_base32 and parses it into
@@ -95,7 +95,7 @@ func parseCryptKey(s string) (CryptKey, error) {
 
 	s = strings.TrimPrefix(s, cryptKeyPrefix)
 
-	data, err := tokenEncoder.DecodeString(s)
+	data, err := keyEncoder.DecodeString(s)
 	if err != nil {
 		return ck, fmt.Errorf("could not parseCryptKey: %v", err)
 	}
@@ -128,9 +128,9 @@ type AuthKey [keySize]byte
 
 // String converts an AuthKey to a string.
 func (a AuthKey) String() string {
-	token := tokenEncoder.EncodeToString(a[:])
+	key := keyEncoder.EncodeToString(a[:])
 
-	return fmt.Sprintf("%s_%s", authKeyPrefix, token)
+	return fmt.Sprintf("%s%s", authKeyPrefix, key)
 }
 
 // parseAuthKey takes a string in the form of prefix_base32 and parses it into
@@ -144,7 +144,7 @@ func parseAuthKey(s string) (AuthKey, error) {
 
 	s = strings.TrimPrefix(s, authKeyPrefix)
 
-	data, err := tokenEncoder.DecodeString(s)
+	data, err := keyEncoder.DecodeString(s)
 	if err != nil {
 		return ak, fmt.Errorf("could not parseAuthKey: %v", err)
 	}

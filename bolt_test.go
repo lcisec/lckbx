@@ -2,22 +2,14 @@ package vault
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 )
 
-type storeTestCase struct {
-	bucket string
-	key    string
-	value  []byte
-}
-
-func TestStore(t *testing.T) {
-	testNewStore(t)
-	testStoreRWD(t)
-}
-
 func testNewStore(t *testing.T) {
+	fmt.Println(t.Name())
+
 	// Open a database in a path that does not exist.
 	_, err := NewStore("bad/path/test.db")
 	if err == nil {
@@ -34,40 +26,36 @@ func testNewStore(t *testing.T) {
 }
 
 func testStoreRWD(t *testing.T) {
-	s, _ := NewStore("test.db")
-	defer s.Close()
-	defer os.Remove("test.db")
+	fmt.Println(t.Name())
 
-	err := s.initialize()
+	s, err := NewStore("test.db")
 	if err != nil {
 		t.Fatal("testStoreRWD: unexpected error", err)
 	}
 
-	cases := []storeTestCase{
-		{userBucket, "user1", []byte("value1")},
-		{authBucket, "auth1", []byte("value1")},
-		{keysetBucket, "keyset1", []byte("value1")},
-		{metadataBucket, "metadata1", []byte("value1")},
-		{itemBucket, "item1", []byte("value1")},
-	}
+	defer s.Close()
+	defer os.Remove("test.db")
 
-	for _, c := range cases {
-		err := s.write(c.bucket, c.key, c.value)
+	key := "testkey"
+	val := []byte("testvalue")
+
+	for _, bucket := range storeBuckets {
+		err := s.write(bucket, key, val)
 		if err != nil {
 			t.Fatal("testStoreRWD: unexpected error", err)
 		}
 
-		data := s.read(c.bucket, c.key)
-		if !bytes.Equal(data, c.value) {
-			t.Fatal("testStoreRWD: expected", c.value, ", received", string(data))
+		data := s.read(bucket, key)
+		if !bytes.Equal(data, val) {
+			t.Fatal("testStoreRWD: expected", val, ", received", string(data))
 		}
 
-		err = s.delete(c.bucket, c.key)
+		err = s.delete(bucket, key)
 		if err != nil {
 			t.Fatal("testStoreRWD: unexpected error", err)
 		}
 
-		data = s.read(c.bucket, c.key)
+		data = s.read(bucket, key)
 		if data != nil {
 			t.Fatal("testStoreRWD: expected nil, received", string(data))
 		}
@@ -75,12 +63,13 @@ func testStoreRWD(t *testing.T) {
 }
 
 func testStoreBackup(t *testing.T) {
+	fmt.Println(t.Name())
+
 	key := "user1"
 	val := []byte("value1")
 
 	s, _ := NewStore("test.db")
 
-	s.initialize()
 	s.write(userBucket, key, val)
 
 	err := s.Backup("backup_test.db")
