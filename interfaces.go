@@ -14,8 +14,11 @@ type deriver interface {
 }
 
 type storer interface {
-	GetUser(aid AuthToken) ([]byte, error)
+	SaveUserId(username string, uid UserToken) error
 	GetUserId(username string) UserToken
+	DeleteUserId(username string) error
+
+	GetUser(aid AuthToken) ([]byte, error)
 	SaveUser(aid AuthToken, data []byte) error
 
 	GetKeyset(kid KeysetToken) ([]byte, error)

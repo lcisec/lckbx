@@ -99,21 +99,25 @@ func (s *Store) delete(bucket, key string) error {
 	return err
 }
 
-func (s *Store) GetUser(aid AuthToken) ([]byte, error) {
-	var user []byte
-
-	user = s.read(authBucket, aid.String())
-	if user == nil {
-		return user, fmt.Errorf("could not GetUser: user %s not found", aid)
+// SaveUserId takes a username and UserToken and stores them in the auth
+// bucket. This allows the UserId to be found by username. The UserId is then
+// used to derive an AuthToken, which is used to lookup the user in the user
+// bucket.
+func (s *Store) SaveUserId(username string, uid UserToken) error {
+	err := s.write(authBucket, username, []byte(uid.String()))
+	if err != nil {
+		return fmt.Errorf("could not Store.SaveUserId: %v", err)
 	}
 
-	return user, nil
+	return nil
 }
 
+// GetUserId returns the bytes for the UserToken associated with the given
+// username.
 func (s *Store) GetUserId(username string) []byte {
 	var uid []byte
 
-	uid = s.read(userBucket, username)
+	uid = s.read(authBucket, username)
 	if uid == nil {
 		return []byte("")
 	}
@@ -121,8 +125,21 @@ func (s *Store) GetUserId(username string) []byte {
 	return uid
 }
 
+// DeleteUserId deletes from the database the bytes for the UserToken
+// associated with the username. If the UserToken is deleted, you will not
+// be able to derive the AuthToken needed to get the user and you will not
+// be able to decrypt the user because the UserToken is used as authenticated
+// data during the encryption process.
+func (s *Store) DeleteUserId(username string) error {
+	return s.delete(authBucket, username)
+}
+
+
+// SaveUser takes an AuthToken and the encrypted user bytes and saves them to
+// the user bucket. The AuthToken is derived from the unique UserToken
+// associated with the user.
 func (s *Store) SaveUser(aid AuthToken, data []byte) error {
-	err := s.write(authBucket, aid.String(), data)
+	err := s.write(userBucket, aid.String(), data)
 	if err != nil {
 		return fmt.Errorf("could not SaveUser: %v", err)
 	}
@@ -130,6 +147,32 @@ func (s *Store) SaveUser(aid AuthToken, data []byte) error {
 	return nil
 }
 
+// GetUser takes an AuthToken and returns the encrypted bytes for the user.
+func (s *Store) GetUser(aid AuthToken) ([]byte, error) {
+	var user []byte
+
+	user = s.read(userBucket, aid.String())
+	if user == nil {
+		return user, fmt.Errorf("could not GetUser: user %s not found", aid)
+	}
+
+	return user, nil
+}
+
+
+// SaveMetadata takes a MetadataToken and the encrypted metadata bytes and
+// saves them to the metadata bucket.
+func (s *Store) SaveMetadata(mid MetadataToken, data []byte) error {
+	err := s.write(metadataBucket, mid.String(), data)
+	if err != nil {
+		return fmt.Errorf("could not SaveMetadata: %v", err)
+	}
+
+	return nil
+}
+
+// GetMetadata takes a MetadataToken and returns the encrypted bytes for the
+// metadata.
 func (s *Store) GetMetadata(mid MetadataToken) ([]byte, error) {
 	var md []byte
 
@@ -141,15 +184,20 @@ func (s *Store) GetMetadata(mid MetadataToken) ([]byte, error) {
 	return md, nil
 }
 
-func (s *Store) SaveMetadata(mid MetadataToken, data []byte) error {
-	err := s.write(metadataBucket, mid.String(), data)
+
+// SaveKeyset takes a KeysetToken and the encrypted keyset bytes and saves
+// them to the keyset bucket.
+func (s *Store) SaveKeyset(kid KeysetToken, data []byte) error {
+	err := s.write(keysetBucket, kid.String(), data)
 	if err != nil {
-		return fmt.Errorf("could not SaveMetadata: %v", err)
+		return fmt.Errorf("could not SaveKeyset: %v", err)
 	}
 
 	return nil
 }
 
+// GetKeyset takes a KeysetToken and returns the encrypted bytes for the
+// keyset.
 func (s *Store) GetKeyset(kid KeysetToken) ([]byte, error) {
 	var ks []byte
 
@@ -161,15 +209,19 @@ func (s *Store) GetKeyset(kid KeysetToken) ([]byte, error) {
 	return ks, nil
 }
 
-func (s *Store) SaveKeyset(kid KeysetToken, data []byte) error {
-	err := s.write(keysetBucket, kid.String(), data)
+
+// SaveItem takes an ItemToken and the encrypted Item bytes and saves them
+// to the item bucket.
+func (s *Store) SaveItem(iid ItemToken, data []byte) error {
+	err := s.write(itemBucket, iid.String(), data)
 	if err != nil {
-		return fmt.Errorf("could not SaveKeyset: %v", err)
+		return fmt.Errorf("could not SaveItem: %v", err)
 	}
 
 	return nil
 }
 
+// GetItem takes an ItemToken and returns the encrypted bytes for the item.
 func (s *Store) GetItem(iid ItemToken) ([]byte, error) {
 	var item []byte
 
@@ -181,16 +233,9 @@ func (s *Store) GetItem(iid ItemToken) ([]byte, error) {
 	return item, nil
 
 }
-func (s *Store) SaveItem(iid ItemToken, data []byte) error {
-	err := s.write(itemBucket, iid.String(), data)
-	if err != nil {
-		return fmt.Errorf("could not SaveItem: %v", err)
-	}
 
-	return nil
-}
 
-// Backup the database to the given file.
+// Backup creates a backup of the database to the given filename.
 func (s *Store) Backup(filename string) error {
 	err := s.db.View(func(tx *bolt.Tx) error {
 		file, e := os.Create(filename)

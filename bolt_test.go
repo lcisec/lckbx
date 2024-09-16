@@ -90,39 +90,130 @@ func testStoreBackup(t *testing.T) {
 	}
 }
 
-// func testStoreUser(t *testing.T) {
-// 	s, _ := NewStore("test.db")
-// 	defer s.Close()
-// 	defer os.Remove("test.db")
 
-// 	user, err := GetUser(aid AuthToken) ([]byte, error)
-// 	GetUserId(username string) UserToken
-// 	SaveUser(aid AuthToken, data []byte) error
-// }
+func testStoreUserId(t *testing.T) {
+	fmt.Println(t.Name())
 
-// func testStoreKeyset(t *testing.T) {
-// 	s, _ := NewStore("test.db")
-// 	defer s.Close()
-// 	defer os.Remove("test.db")
+	s, _ := NewStore("test.db")
+	defer s.Close()
+	defer os.Remove("test.db")
 
-// 	GetKeyset(kid KeysetToken) ([]byte, error)
-// 	SaveKeyset(kid KeysetToken, data []byte) error
-// }
+	uid := NewUserToken()
+	username := "TestUser"
 
-// func testStoreMetadata(t *testing.T) {
-// 	store, _ := NewStore("test.db")
-// 	defer store.Close()
-// 	defer os.Remove("test.db")
+	err := s.SaveUserId(username, uid)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
 
-// 	GetMetadata(mid MetadataToken) ([]byte, error)
-// 	SaveMetadata(mid MetadataToken, data []byte) error
-// }
+	data := s.GetUserId(username)
+	if string(data) != uid.String() {
+		t.Fatal("Expected", uid.String(), ", received", string(data))
+	}
 
-// func testStoreItem(t *testing.T) {
-// 	store, _ := NewStore("test.db")
-// 	defer store.Close()
-// 	defer os.Remove("test.db")
+	err = s.DeleteUserId(username)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
 
-// 	GetItem(iid ItemToken) ([]byte, error)
-// 	SaveItem(iid ItemToken, data []byte) error
-// }
+}
+
+func testStoreUser(t *testing.T) {
+	fmt.Println(t.Name())
+
+	s, _ := NewStore("test.db")
+	defer s.Close()
+	defer os.Remove("test.db")
+
+	aid := NewAuthToken()
+	userBytes := []byte("test user bytes.")
+
+	err := s.SaveUser(aid, userBytes)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	user, err := s.GetUser(aid)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	if string(user) != string(userBytes) {
+		t.Fatal("Expected", string(userBytes), ", received", string(user))
+	}
+}
+
+func testStoreKeyset(t *testing.T) {
+	fmt.Println(t.Name())
+
+	s, _ := NewStore("test.db")
+	defer s.Close()
+	defer os.Remove("test.db")
+
+	kid := NewKeysetToken()
+	keyBytes := []byte("test key bytes.")
+
+	err := s.SaveKeyset(kid, keyBytes)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	key, err := s.GetKeyset(kid)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	if string(key) != string(keyBytes) {
+		t.Fatal("Expected", string(keyBytes), ", received", string(key))
+	}
+}
+
+func testStoreMetadata(t *testing.T) {
+	fmt.Println(t.Name())
+
+	s, _ := NewStore("test.db")
+	defer s.Close()
+	defer os.Remove("test.db")
+
+	mid := NewMetadataToken()
+	metaBytes := []byte("test metadata bytes.")
+
+	err := s.SaveMetadata(mid, metaBytes)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	meta, err := s.GetMetadata(mid)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	if string(meta) != string(metaBytes) {
+		t.Fatal("Expected", string(metaBytes), ", received", string(meta))
+	}
+}
+
+func testStoreItem(t *testing.T) {
+	fmt.Println(t.Name())
+
+	s, _ := NewStore("test.db")
+	defer s.Close()
+	defer os.Remove("test.db")
+
+	iid := NewItemToken()
+	itemBytes := []byte("test item bytes.")
+
+	err := s.SaveItem(iid, itemBytes)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	item, err := s.GetItem(iid)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	if string(item) != string(itemBytes) {
+		t.Fatal("Expected", string(itemBytes), ", received", string(item))
+	}
+}

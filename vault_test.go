@@ -14,12 +14,16 @@ func TestVault(t *testing.T) {
 	t.Run("Test Tokens", testTokens)
 	t.Run("Test Keys", testKeys)
 
-	// // Ensure data storage functions work as expected.
-	// t.Run("Test Store User", testStoreUser)
-	// t.Run("Test Store Keyset", testStoreKeyset)
-	// t.Run("Test Store Metadata", testStoreMetadata)
-	// t.Run("Test Store Item", testStoreItem)
+	// Ensure data storage functions work as expected.
+	t.Run("Test Store UserId", testStoreUserId)
+	t.Run("Test Store User", testStoreUser)
+	t.Run("Test Store Keyset", testStoreKeyset)
+	t.Run("Test Store Metadata", testStoreMetadata)
+	t.Run("Test Store Item", testStoreItem)
 
-	// // End-to-end testing
+	// Ensure individual data types work as expected
+
+	
+	// End-to-end testing
 
 }
