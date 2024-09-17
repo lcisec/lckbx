@@ -2,7 +2,6 @@ package vault
 
 import (
 	"fmt"
-	"io"
 
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/blake2b"
@@ -10,7 +9,7 @@ import (
 )
 
 const (
-	minPassphraseLength = 15
+	minPassphraseLength = 16
 )
 
 type argonBlakeDerive struct {
@@ -49,17 +48,13 @@ func (a *argonBlakeDerive) DeriveBaseKey(username, passphrase string) (BaseKey, 
 func (a *argonBlakeDerive) DeriveAuthKey(baseKey BaseKey) (AuthKey, error) {
 	var ak AuthKey
 
-	kdf, err := blake2b.NewXOF(keySize, baseKey[:])
+	kdf, err := blake2b.New(keySize, baseKey[:])
 	if err != nil {
 		return ak, fmt.Errorf("could not DeriveAuthKey: %v", err)
 	}
 
 	kdf.Write(a.authInfo)
-
-	_, err = io.ReadFull(kdf, ak[:])
-	if err != nil {
-		return ak, fmt.Errorf("could not DeriveAuthKey: %v", err)
-	}
+	copy(ak[:], kdf.Sum(nil))
 
 	return ak, nil
 }
@@ -68,17 +63,13 @@ func (a *argonBlakeDerive) DeriveAuthKey(baseKey BaseKey) (AuthKey, error) {
 func (a *argonBlakeDerive) DeriveAuthToken(baseKey BaseKey, ut UserToken) (AuthToken, error) {
 	var at AuthToken
 
-	kdf, err := blake2b.NewXOF(tokenSize, baseKey[:])
+	kdf, err := blake2b.New(tokenSize, baseKey[:])
 	if err != nil {
 		return at, fmt.Errorf("could not DeriveAuthToken: %v", err)
 	}
 
 	kdf.Write([]byte(ut.String()))
-
-	_, err = io.ReadFull(kdf, at[:])
-	if err != nil {
-		return at, fmt.Errorf("could not DeriveAuthToken: %v", err)
-	}
+	copy(at[:], kdf.Sum(nil))
 
 	return at, nil
 }
@@ -87,7 +78,7 @@ func (a *argonBlakeDerive) DeriveAuthToken(baseKey BaseKey, ut UserToken) (AuthT
 func (a *argonBlakeDerive) DeriveCryptKey(baseKey BaseKey, salt []byte) (CryptKey, error) {
 	var ck CryptKey
 
-	kdf, err := blake2b.NewXOF(keySize, baseKey[:])
+	kdf, err := blake2b.New(keySize, baseKey[:])
 	if err != nil {
 		return ck, fmt.Errorf("could not DeriveCryptKey: %v", err)
 	}
@@ -97,11 +88,7 @@ func (a *argonBlakeDerive) DeriveCryptKey(baseKey BaseKey, salt []byte) (CryptKe
 	}
 
 	kdf.Write(salt)
-
-	_, err = io.ReadFull(kdf, ck[:])
-	if err != nil {
-		return ck, fmt.Errorf("could not DeriveCryptKey: %v", err)
-	}
+	copy(ck[:], kdf.Sum(nil))
 
 	return ck, nil
 }
@@ -109,8 +96,8 @@ func (a *argonBlakeDerive) DeriveCryptKey(baseKey BaseKey, salt []byte) (CryptKe
 // NewV1Deriver returns a deriver based on Argon2 and Blake2.
 func NewV1Deriver() argonBlakeDerive {
 	return argonBlakeDerive{
-		time:      1,
-		memory:    2 * 1024 * 1024,
+		time:      3,
+		memory:    64 * 1024,
 		threads:   4,
 		authInfo:  []byte("This key will be used for authentication."),
 		cryptInfo: []byte("This key will be used for encryption."),
