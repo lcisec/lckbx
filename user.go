@@ -8,11 +8,10 @@ import (
 // The User struct holds the minimum data we need to identify our user. It is
 // stored in the database encrypted with the derived AuthKey.
 type User struct {
-	UserId        UserToken
-	UserName      string
-	KeysetId      KeysetToken
-	RecoveryKeyId KeysetToken
-	MetadataId    MetadataToken
+	UserId     UserToken
+	UserName   string
+	KeysetId   KeysetToken
+	MetadataId MetadataToken
 }
 
 func (u *User) bytes(crypt crypter) ([]byte, error) {
@@ -75,11 +74,10 @@ func (u *User) Save(store storer, crypt crypter, aid AuthToken) error {
 // NewUser takes a username and creates a new User object.
 func NewUser(username string) User {
 	return User{
-		UserId:        NewUserToken(),
-		UserName:      username,
-		KeysetId:      NewKeysetToken(),
-		RecoveryKeyId: NewKeysetToken(),
-		MetadataId:    NewMetadataToken(),
+		UserId:     NewUserToken(),
+		UserName:   username,
+		KeysetId:   NewKeysetToken(),
+		MetadataId: NewMetadataToken(),
 	}
 }
 

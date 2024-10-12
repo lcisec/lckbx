@@ -24,6 +24,7 @@ func NewItemMetadata(name string, kv, cv VersionToken) ItemMetadata {
 
 type Metadata struct {
 	MetadataId MetadataToken
+	KeysetId   KeysetToken
 	mutex      *sync.RWMutex
 	Items      map[string]ItemMetadata
 }

@@ -2,6 +2,7 @@ package vault
 
 import (
 	"crypto/rand"
+	"encoding/base32"
 	"fmt"
 )
 
@@ -39,4 +40,19 @@ func newNonceBytes() []byte {
 	}
 
 	return bytes[:]
+}
+
+// newRecoveryPhrase returns a new randomly generated recovery pass phrase.
+func newRecoveryPhrase() string {
+	var bytes [minPassphraseLength]byte
+	var encoder = base32.NewEncoding("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567").WithPadding(base32.NoPadding)
+
+	_, err := rand.Read(bytes[:])
+	if err != nil {
+		panic(fmt.Errorf("Could not newRecoveryKey: %v", err))
+	}
+
+	phrase := encoder.EncodeToString(bytes[:])
+
+	return phrase[:minPassphraseLength]
 }

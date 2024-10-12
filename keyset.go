@@ -45,6 +45,102 @@ func (k *Keyset) AddKey(bk BaseKey) VersionToken {
 	return version
 }
 
+// GetNewItemKey derives a new CryptKey for an Item using the latest BaseKey
+// and an ItemToken.
+func (k *Keyset) GetNewItemKey(iid ItemToken) (CryptKey, error) {
+	ck, err := k.GetItemKey(k.Latest, iid)
+	if err != nil {
+		return ck, fmt.Errorf("could not Keyset.GetNewItemKey: %v", err)
+	}
+
+	return ck, nil
+}
+
+// GetItemKey derives a CryptKey for an Item using the specified BaseKey and
+// ItemToken.
+func (k *Keyset) GetItemKey(v VersionToken, iid ItemToken) (CryptKey, error) {
+	var ck CryptKey
+
+	deriver := NewV1Deriver()
+
+	ki, err := k.GetKey(v)
+	if err != nil {
+		return ck, fmt.Errorf("could not Keyset.GetItemKey: %v", err)
+	}
+
+	ck, err = deriver.DeriveCryptKey(ki.Key, []byte(iid.String()))
+	if err != nil {
+		return ck, fmt.Errorf("could not Keyset.GetItemKey: %v", err)
+	}
+
+	return ck, nil
+}
+
+// GetNewMetadataKey derives a new CryptKey for a Metadata object using the
+// latest BaseKey and a MetadataToken.
+func (k *Keyset) GetNewMetadataKey(mid MetadataToken) (CryptKey, error) {
+	ck, err := k.GetMetadataKey(k.Latest, mid)
+	if err != nil {
+		return ck, fmt.Errorf("could not Keyset.GetNewMetadataKey: %v", err)
+	}
+
+	return ck, nil
+}
+
+// GetMetadataKey derives a CryptKey for a Metadata object using the specified
+// BaseKey and MetadataToken.
+func (k *Keyset) GetMetadataKey(v VersionToken, mid MetadataToken) (CryptKey, error) {
+	var ck CryptKey
+
+	deriver := NewV1Deriver()
+
+	ki, err := k.GetKey(v)
+	if err != nil {
+		return ck, fmt.Errorf("could not Keyset.GetMetadataKey: %v", err)
+	}
+
+	ck, err = deriver.DeriveCryptKey(ki.Key, []byte(mid.String()))
+	if err != nil {
+		return ck, fmt.Errorf("could not Keyset.GetMetadataKey: %v", err)
+	}
+
+	return ck, nil
+}
+
+// IncrementCount increments the count of objects encrypted with a given
+// BaseKey.
+func (k *Keyset) IncrementCount(version VersionToken) error {
+	ki, err := k.GetKey(version)
+	if err != nil {
+		return fmt.Errorf("could not Keyset.IncrementCount: %v", err)
+	}
+
+	ki.Count = ki.Count + 1
+
+	k.mutex.Lock()
+	k.Keys[version.String()] = ki
+	k.mutex.Unlock()
+
+	return nil
+}
+
+// DecrementCount decrements the count of objects encrypted with a given
+// BaseKey.
+func (k *Keyset) DecrementCount(version VersionToken) error {
+	ki, err := k.GetKey(version)
+	if err != nil {
+		return fmt.Errorf("could not Keyset.IncrementCount: %v", err)
+	}
+
+	ki.Count = ki.Count - 1
+
+	k.mutex.Lock()
+	k.Keys[version.String()] = ki
+	k.mutex.Unlock()
+
+	return nil
+}
+
 // DeleteKey deletes the BaseKey, identified by the VersionToken, from the
 // KeySet.
 func (k *Keyset) DeleteKey(v VersionToken) error {

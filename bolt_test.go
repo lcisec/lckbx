@@ -90,7 +90,6 @@ func testStoreBackup(t *testing.T) {
 	}
 }
 
-
 func testStoreUserId(t *testing.T) {
 	fmt.Println(t.Name())
 

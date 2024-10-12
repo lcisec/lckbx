@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-
-
 var (
 	username       = "user"
 	userTokenBytes = []byte{31, 34, 182, 210, 19, 183, 200, 6, 8, 41, 125, 107, 196, 122, 143, 6, 30, 149, 213, 230, 89, 18, 54, 64, 40, 113, 179, 235, 141, 23, 109, 79}
@@ -18,8 +16,6 @@ var (
 	cryptKey       = "ck_LIWCI2SX2BYQLU7CATC6MZMOTCT5VLCQ6LAEE6E3EXVAIF5QOVWQ"
 	saltBytes      = []byte{31, 34, 182, 210, 19, 183, 200, 6, 8, 41, 125, 107, 196, 122, 143, 6, 30, 149, 213, 230, 89, 18, 54, 64, 40, 113, 179, 235, 141, 23, 109, 79}
 	saltedCryptKey = "ck_6M54CRBI3B7EHX565V7OPXHOY7PSCNGRSCBUEAR3E6M36J4HOSHA"
-
-
 )
 
 func testArgonBlakeDeriver(t *testing.T) {

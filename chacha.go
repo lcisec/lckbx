@@ -29,7 +29,11 @@ func (x *XChaCha) Decrypt(ciphertext, ad []byte) ([]byte, error) {
 	}
 
 	if (ad == nil) || (len(ad) == 0) {
-		return plaintext, fmt.Errorf("could not XChaCha.Decrypt: missing authenticated data")
+		return plaintext, fmt.Errorf("could not XChaCha.Decrypt: missing associated data")
+	}
+
+	if len(ad) < tokenSize {
+		return plaintext, fmt.Errorf("could not XChaCha.Decrypt: associated data is too short.")
 	}
 
 	// Split nonce and ciphertext.
@@ -48,8 +52,12 @@ func (x *XChaCha) Decrypt(ciphertext, ad []byte) ([]byte, error) {
 func (x *XChaCha) Encrypt(plaintext, ad []byte) ([]byte, error) {
 	var ciphertext []byte
 
-	if len(ad) == 0 {
-		return ciphertext, fmt.Errorf("could not XChaCha.Encrypt: missing authenticated data")
+	if (ad == nil) || (len(ad) == 0) {
+		return ciphertext, fmt.Errorf("could not XChaCha.Encrypt: missing associated data")
+	}
+
+	if len(ad) < tokenSize {
+		return ciphertext, fmt.Errorf("could not XChaCha.Encrypt: associated data is too short.")
 	}
 
 	nonce := newNonceBytes()
@@ -67,7 +75,7 @@ func NewV1Crypter(key []byte) XChaCha {
 		panic(fmt.Sprintf("could not NewV1Crypter: key is too short"))
 	}
 
-	aead, err := chacha20poly1305.NewX(key[:])
+	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
 		panic(fmt.Sprintf("could not NewV1Crypter: %v", err))
 	}

@@ -134,7 +134,6 @@ func (s *Store) DeleteUserId(username string) error {
 	return s.delete(authBucket, username)
 }
 
-
 // SaveUser takes an AuthToken and the encrypted user bytes and saves them to
 // the user bucket. The AuthToken is derived from the unique UserToken
 // associated with the user.
@@ -158,7 +157,6 @@ func (s *Store) GetUser(aid AuthToken) ([]byte, error) {
 
 	return user, nil
 }
-
 
 // SaveMetadata takes a MetadataToken and the encrypted metadata bytes and
 // saves them to the metadata bucket.
@@ -184,7 +182,6 @@ func (s *Store) GetMetadata(mid MetadataToken) ([]byte, error) {
 	return md, nil
 }
 
-
 // SaveKeyset takes a KeysetToken and the encrypted keyset bytes and saves
 // them to the keyset bucket.
 func (s *Store) SaveKeyset(kid KeysetToken, data []byte) error {
@@ -209,7 +206,6 @@ func (s *Store) GetKeyset(kid KeysetToken) ([]byte, error) {
 	return ks, nil
 }
 
-
 // SaveItem takes an ItemToken and the encrypted Item bytes and saves them
 // to the item bucket.
 func (s *Store) SaveItem(iid ItemToken, data []byte) error {
@@ -233,7 +229,6 @@ func (s *Store) GetItem(iid ItemToken) ([]byte, error) {
 	return item, nil
 
 }
-
 
 // Backup creates a backup of the database to the given filename.
 func (s *Store) Backup(filename string) error {
