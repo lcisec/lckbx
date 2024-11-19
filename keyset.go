@@ -6,18 +6,17 @@ import (
 	"sync"
 )
 
-// keysetItem stores a BaseKey and the number of Items encrypted with that
-// key.
+// keysetItem stores a BaseKey and the VersionToken of the deriver used to
+// generate additional keys from the BaseKey.
 type KeysetItem struct {
-	Key   BaseKey
-	Count uint64
+	BaseKey        BaseKey
+	DeriverVersion VersionToken
 }
 
-// Keyset holds a map of BaseKeys that are used to encrypt Items. Triggering
-// events such as password change, will cause a new keysetItem to be added to
-// the Keyset. The client will reencrypt Items to the lastest BaseKey as
-// needed. Once there are no longer any items encrypted with that keysetItem,
-// it is removed from the KeySet.
+// Keyset holds a map of KeySetItems that contain the key material for
+// encrypting Metadata and Items. Triggering events such as password change,
+// will cause a new KeysetItem to be added to the Keyset. The client will
+// reencrypt Metadata and Items to the lastest BaseKey as needed.
 //
 // Thank you Sophie Schmeig for this idea:
 // https://bughunters.google.com/blog/6182336647790592/cryptographic-agility-and-key-rotation
@@ -30,11 +29,11 @@ type Keyset struct {
 
 // AddKey adds a new BaseKey to the Keyset and updates the Latest value to
 // reflect the new version.
-func (k *Keyset) AddKey(bk BaseKey) VersionToken {
+func (k *Keyset) AddKey(bk BaseKey, dv VersionToken) VersionToken {
 	version := NewVersionToken()
 	ksItem := KeysetItem{
-		Key:   bk,
-		Count: 0,
+		BaseKey:        bk,
+		DeriverVersion: dv,
 	}
 
 	k.mutex.Lock()
@@ -61,14 +60,14 @@ func (k *Keyset) GetNewItemKey(iid ItemToken) (CryptKey, error) {
 func (k *Keyset) GetItemKey(v VersionToken, iid ItemToken) (CryptKey, error) {
 	var ck CryptKey
 
-	deriver := NewV1Deriver()
-
 	ki, err := k.GetKey(v)
 	if err != nil {
 		return ck, fmt.Errorf("could not Keyset.GetItemKey: %v", err)
 	}
 
-	ck, err = deriver.DeriveCryptKey(ki.Key, []byte(iid.String()))
+	deriver := NewDeriver(ki.DeriverVersion)
+
+	ck, err = deriver.DeriveCryptKey(ki.BaseKey, []byte(iid.String()))
 	if err != nil {
 		return ck, fmt.Errorf("could not Keyset.GetItemKey: %v", err)
 	}
@@ -92,14 +91,14 @@ func (k *Keyset) GetNewMetadataKey(mid MetadataToken) (CryptKey, error) {
 func (k *Keyset) GetMetadataKey(v VersionToken, mid MetadataToken) (CryptKey, error) {
 	var ck CryptKey
 
-	deriver := NewV1Deriver()
-
 	ki, err := k.GetKey(v)
 	if err != nil {
 		return ck, fmt.Errorf("could not Keyset.GetMetadataKey: %v", err)
 	}
 
-	ck, err = deriver.DeriveCryptKey(ki.Key, []byte(mid.String()))
+	deriver := NewDeriver(ki.DeriverVersion)
+
+	ck, err = deriver.DeriveCryptKey(ki.BaseKey, []byte(mid.String()))
 	if err != nil {
 		return ck, fmt.Errorf("could not Keyset.GetMetadataKey: %v", err)
 	}
@@ -107,52 +106,9 @@ func (k *Keyset) GetMetadataKey(v VersionToken, mid MetadataToken) (CryptKey, er
 	return ck, nil
 }
 
-// IncrementCount increments the count of objects encrypted with a given
-// BaseKey.
-func (k *Keyset) IncrementCount(version VersionToken) error {
-	ki, err := k.GetKey(version)
-	if err != nil {
-		return fmt.Errorf("could not Keyset.IncrementCount: %v", err)
-	}
-
-	ki.Count = ki.Count + 1
-
-	k.mutex.Lock()
-	k.Keys[version.String()] = ki
-	k.mutex.Unlock()
-
-	return nil
-}
-
-// DecrementCount decrements the count of objects encrypted with a given
-// BaseKey.
-func (k *Keyset) DecrementCount(version VersionToken) error {
-	ki, err := k.GetKey(version)
-	if err != nil {
-		return fmt.Errorf("could not Keyset.IncrementCount: %v", err)
-	}
-
-	ki.Count = ki.Count - 1
-
-	k.mutex.Lock()
-	k.Keys[version.String()] = ki
-	k.mutex.Unlock()
-
-	return nil
-}
-
-// DeleteKey deletes the BaseKey, identified by the VersionToken, from the
+// deleteKey deletes the BaseKey, identified by the VersionToken, from the
 // KeySet.
-func (k *Keyset) DeleteKey(v VersionToken) error {
-	ksItem, err := k.GetKey(v)
-	if err != nil {
-		return fmt.Errorf("could not Keyset.DeleteKey: %v", err)
-	}
-
-	if ksItem.Count != 0 {
-		return fmt.Errorf("could not Keyset.DeleteKey: key is still in use")
-	}
-
+func (k *Keyset) deleteKey(v VersionToken) error {
 	k.mutex.Lock()
 	delete(k.Keys, v.String())
 	k.mutex.Unlock()
@@ -220,7 +176,8 @@ func NewKeyset(kid KeysetToken) Keyset {
 		Keys:     make(map[string]KeysetItem),
 	}
 
-	ks.AddKey(newBaseKey())
+	version, _ := parseVersionToken(argonBlakeDeriverVersion)
+	ks.AddKey(newBaseKey(), version)
 
 	return ks
 }

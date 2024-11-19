@@ -5,18 +5,19 @@ import (
 	"testing"
 )
 
-var (
-	cryptKeyBytes       = []byte("FEDCBA9876543210FEDCBA9876543210")
-	noAssociatedData    = []byte("")
-	shortAssociatedData = []byte("0123456789abcdef0123456789abcde")
-	goodAssociatedData  = []byte("0123456789abcdef0123456789abcdef")
-	plaintext           = []byte("The rain in Spain falls mainly in the plain.")
-)
-
-func testChaChaCrypter(t *testing.T) {
+func testXChaChaCrypter(t *testing.T) {
 	fmt.Println(t.Name())
 
-	crypter := NewV1Crypter(cryptKeyBytes)
+	t.Run("Test Encrypt", testXChaChaEncrypt)
+	t.Run("Test Decrypt", testXChaChaDecrypt)
+	t.Run("Test RoundTrip", testXChaChaRoundTrip)
+}
+
+func testXChaChaEncrypt(t *testing.T) {
+	fmt.Println(t.Name())
+
+	version, _ := parseVersionToken(xChaChaCrypterVersion)
+	crypter := NewCrypter(cryptKeyBytes, version)
 	_, err := crypter.Encrypt(plaintext, noAssociatedData)
 	if err == nil {
 		t.Fatal("Expected error, received nil")
@@ -27,12 +28,20 @@ func testChaChaCrypter(t *testing.T) {
 		t.Fatal("Expected error, received nil")
 	}
 
-	encrypted, err := crypter.Encrypt(plaintext, goodAssociatedData)
+	_, err = crypter.Encrypt(plaintext, goodAssociatedData)
 	if err != nil {
 		t.Fatal("Expected no error, received", err)
 	}
+}
 
-	_, err = crypter.Decrypt(encrypted, noAssociatedData)
+func testXChaChaDecrypt(t *testing.T) {
+	fmt.Println(t.Name())
+
+	version, _ := parseVersionToken(xChaChaCrypterVersion)
+	crypter := NewCrypter(cryptKeyBytes, version)
+	encrypted, _ := crypter.Encrypt(plaintext, goodAssociatedData)
+
+	_, err := crypter.Decrypt(encrypted, noAssociatedData)
 	if err == nil {
 		t.Fatal("Expected error, received nil")
 	}
@@ -42,10 +51,19 @@ func testChaChaCrypter(t *testing.T) {
 		t.Fatal("Expected error, received nil")
 	}
 
-	decrypted, err := crypter.Decrypt(encrypted, goodAssociatedData)
+	_, err = crypter.Decrypt(encrypted, goodAssociatedData)
 	if err != nil {
 		t.Fatal("Expected no error, received", err)
 	}
+}
+
+func testXChaChaRoundTrip(t *testing.T) {
+	fmt.Println(t.Name())
+
+	version, _ := parseVersionToken(xChaChaCrypterVersion)
+	crypter := NewCrypter(cryptKeyBytes, version)
+	encrypted, _ := crypter.Encrypt(plaintext, goodAssociatedData)
+	decrypted, _ := crypter.Decrypt(encrypted, goodAssociatedData)
 
 	if string(decrypted) != string(plaintext) {
 		t.Fatal("Expected", string(plaintext), ", received", string(decrypted))

@@ -107,6 +107,15 @@ func testVersionToken(t *testing.T) {
 		t.Fatal("VersionToken has incorrect prefix.")
 	}
 
+	parsed, err := parseVersionToken(token)
+	if err != nil {
+		t.Fatal("Expected no error, recieved", err)
+	}
+
+	if parsed.String() != token {
+		t.Fatal("Expected", token, ", received", parsed.String())
+	}
+
 	token = strings.TrimPrefix(token, versionTokenPrefix)
 	if len(token) != tokenBase32Size {
 		t.Fatal("Expected", tokenBase32Size, "base32 characters, received", len(token))

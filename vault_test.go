@@ -22,8 +22,8 @@ func TestVault(t *testing.T) {
 	t.Run("Test Store Item", testStoreItem)
 
 	// Ensure encryption and derivation work as expected.
-	t.Run("Test Deriver", testArgonBlakeDeriver)
-	t.Run("Test Crypter", testChaChaCrypter)
+	t.Run("Test Deriver", testDeriver)
+	t.Run("Test Crypter", testCrypter)
 
 	// Ensure individual data types work as expected
 	// t.Run("Test Keyset", testKeyset)

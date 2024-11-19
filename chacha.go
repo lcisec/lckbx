@@ -11,13 +11,13 @@ const (
 	nonceSize = 24
 )
 
-// The XChaCha struct encrypts and decrypts data using XChaCha20Poly1305.
-type XChaCha struct {
+// The xChaCha struct encrypts and decrypts data using XChaCha20Poly1305.
+type xChaCha struct {
 	aead      cipher.AEAD
 	nonceSize int
 }
 
-func (x *XChaCha) Decrypt(ciphertext, ad []byte) ([]byte, error) {
+func (x xChaCha) Decrypt(ciphertext, ad []byte) ([]byte, error) {
 	var plaintext []byte
 
 	if ciphertext == nil {
@@ -49,7 +49,7 @@ func (x *XChaCha) Decrypt(ciphertext, ad []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-func (x *XChaCha) Encrypt(plaintext, ad []byte) ([]byte, error) {
+func (x xChaCha) Encrypt(plaintext, ad []byte) ([]byte, error) {
 	var ciphertext []byte
 
 	if (ad == nil) || (len(ad) == 0) {
@@ -67,21 +67,20 @@ func (x *XChaCha) Encrypt(plaintext, ad []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// NewV1Crypter creates a new crypter based on the XChaCha20Poly1305 cipher.
-func NewV1Crypter(key []byte) XChaCha {
-	var c XChaCha
-
+// NewXChaChaCrypter creates a new XChaCha object, which satisfies the crypter
+// interface and is based on the XChaCha20Poly1305 cipher.
+func newXChaChaCrypter(key []byte) xChaCha {
 	if len(key) < keySize {
-		panic(fmt.Sprintf("could not NewV1Crypter: key is too short"))
+		panic(fmt.Sprintf("could not newXChaChaCrytper: key is too short"))
 	}
 
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
-		panic(fmt.Sprintf("could not NewV1Crypter: %v", err))
+		panic(fmt.Sprintf("could not newXChaChaCrypter: %v", err))
 	}
 
-	c.aead = aead
-	c.nonceSize = nonceSize
-
-	return c
+	return xChaCha{
+		aead:      aead,
+		nonceSize: nonceSize,
+	}
 }

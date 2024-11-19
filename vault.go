@@ -47,12 +47,12 @@ func registerUser(store storer, username, password string) (string, error) {
 	keyset := NewKeyset(user.KeysetId)
 	metadata := NewMetadata(user.MetadataId)
 
-	err := storeUser(store, username, password, user, keyset, metadata)
+	err := storeUser(store, username, password, user, keyset)
 	if err != nil {
 		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
 	}
 
-	err = storeUser(store, username, recoveryPhrase, user, keyset, metadata)
+	err = storeUser(store, username, recoveryPhrase, user, keyset)
 	if err != nil {
 		// cleanup User
 		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
@@ -63,8 +63,13 @@ func registerUser(store storer, username, password string) (string, error) {
 		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
 	}
 
-	crypt := NewV1Crypter(key[:])
-	err = metadata.Save(store, &crypt)
+	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
+	if err != nil {
+		return recoveryPhrase, fmt.Errorf("could not regiserUser: %v", err)
+	}
+
+	crypt := NewCrypter(key[:], crypterVersion)
+	err = metadata.Save(store, crypt)
 	if err != nil {
 		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
 	}
@@ -73,28 +78,37 @@ func registerUser(store storer, username, password string) (string, error) {
 }
 
 // storeUser
-//  1. Derive an AuthID, AuthKey, and CryptKey from the username and password.
+//  1. Derive an AuthKey, AuthToken, and CryptKey from the username and password.
 //  2. Save the User to the store using the derived AuthId and AuthKey.
 //  3. Save the Keyset to the store using the derived encryption key.
-//  4. Save the Metadata to the store using the derived encryption key.
-func storeUser(store storer, username, password string, user User, ks Keyset, meta Metadata) error {
-	deriver := NewV1Deriver()
-
-	ak, at, ck, err := getKeysAndToken(&deriver, username, password, user.UserId)
+func storeUser(store storer, username, password string, user User, keyset Keyset) error {
+	deriverVersion, err := parseVersionToken(argonBlakeDeriverVersion)
 	if err != nil {
-		return fmt.Errorf("could not createUser: %v", err)
+		return fmt.Errorf("could not storeUser: %v", err)
 	}
 
-	crypt := NewV1Crypter(ak[:])
-	err = user.Create(store, &crypt, at)
+	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
 	if err != nil {
-		return fmt.Errorf("could not createUser: %v", err)
+		return fmt.Errorf("could not storeUser: %v", err)
 	}
 
-	crypt = NewV1Crypter(ck[:])
-	err = ks.Save(store, &crypt, user.KeysetId)
+	deriver := NewDeriver(deriverVersion)
+
+	ak, at, ck, err := getKeysAndToken(deriver, username, password, user.UserId)
 	if err != nil {
-		return fmt.Errorf("could not createUser: %v", err)
+		return fmt.Errorf("could not storeUser: %v", err)
+	}
+
+	crypt := NewCrypter(ak[:], crypterVersion)
+	err = user.Create(store, crypt, at)
+	if err != nil {
+		return fmt.Errorf("could not storeUser: %v", err)
+	}
+
+	crypt = NewCrypter(ck[:], crypterVersion)
+	err = keyset.Save(store, crypt, user.KeysetId)
+	if err != nil {
+		return fmt.Errorf("could not storeUser: %v", err)
 	}
 
 	return nil
@@ -110,23 +124,33 @@ func login(store storer, username, password string) (Keyset, Metadata, error) {
 	var ks Keyset
 	var md Metadata
 
-	deriver := NewV1Deriver()
+	deriverVersion, err := parseVersionToken(argonBlakeDeriverVersion)
+	if err != nil {
+		return ks, md, fmt.Errorf("could not login: %v", err)
+	}
+
+	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
+	if err != nil {
+		return ks, md, fmt.Errorf("could not login: %v", err)
+	}
+
+	deriver := NewDeriver(deriverVersion)
 	userId := store.GetUserId(username)
 
-	ak, at, ck, err := getKeysAndToken(&deriver, username, password, userId)
+	ak, at, ck, err := getKeysAndToken(deriver, username, password, userId)
 	if err != nil {
 		return ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
 	// Get our user from the database
-	uCrypt := NewV1Crypter(ak[:])
-	user, err := NewUserFromStore(store, &uCrypt, at, userId)
+	uCrypt := NewCrypter(ak[:], crypterVersion)
+	user, err := NewUserFromStore(store, uCrypt, at, userId)
 	if err != nil {
 		return ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
-	kCrypt := NewV1Crypter(ck[:])
-	ks, err = NewKeysetFromStore(store, &kCrypt, user.KeysetId)
+	kCrypt := NewCrypter(ck[:], crypterVersion)
+	ks, err = NewKeysetFromStore(store, kCrypt, user.KeysetId)
 	if err != nil {
 		return ks, md, fmt.Errorf("could not login: %v", err)
 	}
@@ -136,8 +160,8 @@ func login(store storer, username, password string) (Keyset, Metadata, error) {
 		return ks, md, fmt.Errorf("could not registerUser: %v", err)
 	}
 
-	mCrypt := NewV1Crypter(key[:])
-	md, err = NewMetadataFromStore(store, &mCrypt, user.MetadataId)
+	mCrypt := NewCrypter(key[:], crypterVersion)
+	md, err = NewMetadataFromStore(store, mCrypt, user.MetadataId)
 	if err != nil {
 		return ks, md, fmt.Errorf("could not login: %v", err)
 	}
@@ -157,4 +181,17 @@ func login(store storer, username, password string) (Keyset, Metadata, error) {
 //  8. Encrypt the Metadata with the derived encryption key and save it.
 
 // Purge Keys
+//  1. Read through all MetadataItems to get a list of active keys.
+//  2. Read through all of the Keyset keys and if any of them are not active,
+//     purge it.
+//  3. This should be run on each login.
+
+// Reencrypt
+// The reencrypt function is started at login and runs in the background until
+// logout.
+//  1. Read through all of the MetadataItems to determine which Items are not
+//     encrypted using the latest key.
+//  2. When an item is found, reencrypt the item with the latest key.
+//  3. Update the Metadata Items by adding a new ItemMetadata entry and then
+//     deleting the old entry.
 //

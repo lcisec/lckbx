@@ -7,6 +7,7 @@ package vault
 import (
 	"encoding/base32"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -121,6 +122,31 @@ func NewVersionToken() VersionToken {
 	copy(vt[:], bytes[:])
 
 	return vt
+}
+
+// parseVersionToken takes a string in the form of vt_base32 and parses it
+// into a VersionToken
+func parseVersionToken(s string) (VersionToken, error) {
+	var vt VersionToken
+
+	if !strings.HasPrefix(s, versionTokenPrefix) {
+		return vt, fmt.Errorf("could not parseVersionToken: invalid prefix")
+	}
+
+	s = strings.TrimPrefix(s, versionTokenPrefix)
+
+	data, err := tokenEncoder.DecodeString(s)
+	if err != nil {
+		return vt, fmt.Errorf("could not parseVersionToken: %v", err)
+	}
+
+	if len(data) != tokenSize {
+		return vt, fmt.Errorf("could not parseVersionToken: invalid length")
+	}
+
+	copy(vt[:], data)
+
+	return vt, nil
 }
 
 // AuthToken represents an authentication token.
