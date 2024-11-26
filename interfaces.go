@@ -31,5 +31,5 @@ type storer interface {
 	SaveItem(iid ItemToken, data []byte) error
 
 	Backup(filename string) error
-	Close()
+	Close() error
 }

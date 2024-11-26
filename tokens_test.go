@@ -56,6 +56,15 @@ func testUserToken(t *testing.T) {
 		t.Fatal("UserToken has incorrect prefix.")
 	}
 
+	parsed, err := parseUserToken(token)
+	if err != nil {
+		t.Fatal("Expected no error, recieved", err)
+	}
+
+	if parsed.String() != token {
+		t.Fatal("Expected", token, ", received", parsed.String())
+	}
+
 	token = strings.TrimPrefix(token, userTokenPrefix)
 	if len(token) != tokenBase32Size {
 		t.Fatal("Expected", tokenBase32Size, "base32 characters, received", len(token))
@@ -71,6 +80,15 @@ func testKeysetToken(t *testing.T) {
 
 	if !strings.HasPrefix(token, keysetTokenPrefix) {
 		t.Fatal("KeysetToken has incorrect prefix.")
+	}
+
+	parsed, err := parseKeysetToken(token)
+	if err != nil {
+		t.Fatal("Expected no error, recieved", err)
+	}
+
+	if parsed.String() != token {
+		t.Fatal("Expected", token, ", received", parsed.String())
 	}
 
 	token = strings.TrimPrefix(token, keysetTokenPrefix)

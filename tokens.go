@@ -64,6 +64,31 @@ func NewUserToken() UserToken {
 	return ut
 }
 
+// parseUserToken takes a string in the form of ut_base32 and parses it
+// into a UserToken
+func parseUserToken(s string) (UserToken, error) {
+	var ut UserToken
+
+	if !strings.HasPrefix(s, userTokenPrefix) {
+		return ut, fmt.Errorf("could not parseUserToken: invalid prefix")
+	}
+
+	s = strings.TrimPrefix(s, userTokenPrefix)
+
+	data, err := tokenEncoder.DecodeString(s)
+	if err != nil {
+		return ut, fmt.Errorf("could not parseUserToken: %v", err)
+	}
+
+	if len(data) != tokenSize {
+		return ut, fmt.Errorf("could not parseUserToken: invalid length")
+	}
+
+	copy(ut[:], data)
+
+	return ut, nil
+}
+
 // KeysetToken represents a keyset token.
 type KeysetToken [tokenSize]byte
 
@@ -82,6 +107,31 @@ func NewKeysetToken() KeysetToken {
 	copy(kt[:], bytes[:])
 
 	return kt
+}
+
+// parseKeysetToken takes a string in the form of kt_base32 and parses it
+// into a KeysetToken
+func parseKeysetToken(s string) (KeysetToken, error) {
+	var kt KeysetToken
+
+	if !strings.HasPrefix(s, keysetTokenPrefix) {
+		return kt, fmt.Errorf("could not parseKeysetToken: invalid prefix")
+	}
+
+	s = strings.TrimPrefix(s, keysetTokenPrefix)
+
+	data, err := tokenEncoder.DecodeString(s)
+	if err != nil {
+		return kt, fmt.Errorf("could not parseKeysetToken: %v", err)
+	}
+
+	if len(data) != tokenSize {
+		return kt, fmt.Errorf("could not parseKeysetToken: invalid length")
+	}
+
+	copy(kt[:], data)
+
+	return kt, nil
 }
 
 // MetadataToken represents a metadata token.

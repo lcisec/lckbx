@@ -112,17 +112,25 @@ func (s *Store) SaveUserId(username string, uid UserToken) error {
 	return nil
 }
 
-// GetUserId returns the bytes for the UserToken associated with the given
-// username.
-func (s *Store) GetUserId(username string) []byte {
+// GetUserId returns the UserToken associated with the given username. If the
+// username cannot be found or if there is an error parsing the token, a
+// random token is returned.
+func (s *Store) GetUserId(username string) UserToken {
 	var uid []byte
+
+	ut := NewUserToken()
 
 	uid = s.read(authBucket, username)
 	if uid == nil {
-		return []byte("")
+		return ut
 	}
 
-	return uid
+	token, err := parseUserToken(string(uid))
+	if err != nil {
+		return ut
+	}
+
+	return token
 }
 
 // DeleteUserId deletes from the database the bytes for the UserToken

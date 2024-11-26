@@ -109,6 +109,10 @@ func (k *Keyset) GetMetadataKey(v VersionToken, mid MetadataToken) (CryptKey, er
 // deleteKey deletes the BaseKey, identified by the VersionToken, from the
 // KeySet.
 func (k *Keyset) deleteKey(v VersionToken) error {
+	if len(k.Keys) == 1 {
+		return fmt.Errorf("could not deleteKey: only available key")
+	}
+
 	k.mutex.Lock()
 	delete(k.Keys, v.String())
 	k.mutex.Unlock()
@@ -153,14 +157,15 @@ func (k *Keyset) bytes(crypt crypter) ([]byte, error) {
 	return encrypted, nil
 }
 
-// Save stores the Keyset as encrypted bytes in the given storer.
-func (k *Keyset) Save(store storer, crypt crypter, ksid KeysetToken) error {
+// Save encrypts the Keyset using the given crypter and then saves the
+// encrypted bytes in the given storer.
+func (k *Keyset) Save(store storer, crypt crypter) error {
 	bytes, err := k.bytes(crypt)
 	if err != nil {
 		return fmt.Errorf("could not Keyset.Save: %v", err)
 	}
 
-	err = store.SaveKeyset(ksid, bytes)
+	err = store.SaveKeyset(k.KeysetId, bytes)
 	if err != nil {
 		return fmt.Errorf("could no Keyset.Save: %v", err)
 	}
@@ -199,6 +204,8 @@ func newKeysetFromBytes(crypt crypter, encrypted []byte, ad []byte) (Keyset, err
 	return ks, nil
 }
 
+// NewKeysetFromStore retrieves the encrypted Keyset bytes from the given
+// storer, decrypts the bytes, and returns a Keyset.
 func NewKeysetFromStore(store storer, crypt crypter, kid KeysetToken) (Keyset, error) {
 	var ks Keyset
 

@@ -106,7 +106,7 @@ func storeUser(store storer, username, password string, user User, keyset Keyset
 	}
 
 	crypt = NewCrypter(ck[:], crypterVersion)
-	err = keyset.Save(store, crypt, user.KeysetId)
+	err = keyset.Save(store, crypt)
 	if err != nil {
 		return fmt.Errorf("could not storeUser: %v", err)
 	}

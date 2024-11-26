@@ -106,8 +106,8 @@ func testStoreUserId(t *testing.T) {
 	}
 
 	data := s.GetUserId(username)
-	if string(data) != uid.String() {
-		t.Fatal("Expected", uid.String(), ", received", string(data))
+	if data.String() != uid.String() {
+		t.Fatal("Expected", uid.String(), ", received", data.String())
 	}
 
 	err = s.DeleteUserId(username)
