@@ -11,6 +11,7 @@ import (
 type KeysetItem struct {
 	BaseKey        BaseKey
 	DeriverVersion VersionToken
+	InUse          bool
 }
 
 // Keyset holds a map of KeySetItems that contain the key material for
@@ -34,6 +35,7 @@ func (k *Keyset) AddKey(bk BaseKey, dv VersionToken) VersionToken {
 	ksItem := KeysetItem{
 		BaseKey:        bk,
 		DeriverVersion: dv,
+		InUse:          true,
 	}
 
 	k.mutex.Lock()
@@ -42,6 +44,24 @@ func (k *Keyset) AddKey(bk BaseKey, dv VersionToken) VersionToken {
 	k.mutex.Unlock()
 
 	return version
+}
+
+// Unused marks a KeysetItem in the Keyset as no longer in use so that it can
+// be purged.
+func (k *Keyset) Unused(v VersionToken) error {
+	key, err := k.GetKey(v)
+	if err != nil {
+		return fmt.Errorf("could not Keyset.Unused: %s does not exist", v)
+	}
+
+	key.InUse = false
+
+	k.mutex.Lock()
+	k.Keys[v.String()] = key
+	k.mutex.Unlock()
+
+	return nil
+
 }
 
 // GetNewItemKey derives a new CryptKey for an Item using the latest BaseKey
@@ -106,11 +126,24 @@ func (k *Keyset) GetMetadataKey(v VersionToken, mid MetadataToken) (CryptKey, er
 	return ck, nil
 }
 
-// deleteKey deletes the BaseKey, identified by the VersionToken, from the
+// DeleteKey deletes the BaseKey, identified by the VersionToken, from the
 // KeySet.
-func (k *Keyset) deleteKey(v VersionToken) error {
+func (k *Keyset) DeleteKey(v VersionToken) error {
 	if len(k.Keys) == 1 {
-		return fmt.Errorf("could not deleteKey: only available key")
+		return fmt.Errorf("could not Keyset.DeleteKey: only available key")
+	}
+
+	if v.String() == k.Latest.String() {
+		return fmt.Errorf("could not Keyset.Deletekey: latest key")
+	}
+
+	key, err := k.GetKey(v)
+	if err != nil {
+		return fmt.Errorf("could not Keyset.Deletekey: %s does not exist", v.String())
+	}
+
+	if key.InUse {
+		return fmt.Errorf("could not Keyset.Deletekey: still in use")
 	}
 
 	k.mutex.Lock()
