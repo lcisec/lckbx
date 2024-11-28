@@ -14,6 +14,13 @@ type KeysetItem struct {
 	InUse          bool
 }
 
+// Equal determines if two KeysetItem objects are the same.
+func (k *KeysetItem) Equal(k2 KeysetItem) bool {
+	return k.BaseKey.String() == k2.BaseKey.String() &&
+		k.DeriverVersion.String() == k2.DeriverVersion.String() &&
+		k.InUse == k2.InUse
+}
+
 // Keyset holds a map of KeySetItems that contain the key material for
 // encrypting Metadata and Items. Triggering events such as password change,
 // will cause a new KeysetItem to be added to the Keyset. The client will
@@ -26,6 +33,39 @@ type Keyset struct {
 	Latest   VersionToken
 	mutex    *sync.RWMutex
 	Keys     map[string]KeysetItem
+}
+
+// Equal determines if two Keyset objects are the same.
+func (k *Keyset) Equal(k2 Keyset) bool {
+	equal := true
+
+	if k.KeysetId.String() != k2.KeysetId.String() {
+		equal = false
+	}
+
+	if k.Latest.String() != k2.Latest.String() {
+		equal = false
+	}
+
+	if len(k.Keys) != len(k2.Keys) {
+		equal = false
+	}
+
+	for mapKey, ks := range k.Keys {
+		ksid, _ := parseVersionToken(mapKey)
+		ks2, err := k2.GetKey(ksid)
+		if err != nil {
+			equal = false
+			break
+		}
+
+		if !ks.Equal(ks2) {
+			equal = false
+			break
+		}
+	}
+
+	return equal
 }
 
 // AddKey adds a new BaseKey to the Keyset and updates the Latest value to
@@ -233,6 +273,8 @@ func newKeysetFromBytes(crypt crypter, encrypted []byte, ad []byte) (Keyset, err
 	if err != nil {
 		return ks, fmt.Errorf("could not NewKeysetFromBytes: %v", err)
 	}
+
+	ks.mutex = &sync.RWMutex{}
 
 	return ks, nil
 }

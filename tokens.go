@@ -44,6 +44,31 @@ func NewItemToken() ItemToken {
 	return it
 }
 
+// parseItemToken takes a string in the form of it_base32 and parses it
+// into an ItemToken
+func parseItemToken(s string) (ItemToken, error) {
+	var it ItemToken
+
+	if !strings.HasPrefix(s, itemTokenPrefix) {
+		return it, fmt.Errorf("could not parseItemToken: invalid prefix")
+	}
+
+	s = strings.TrimPrefix(s, itemTokenPrefix)
+
+	data, err := tokenEncoder.DecodeString(s)
+	if err != nil {
+		return it, fmt.Errorf("could not parseItemToken: %v", err)
+	}
+
+	if len(data) != tokenSize {
+		return it, fmt.Errorf("could not parseItemToken: invalid length")
+	}
+
+	copy(it[:], data)
+
+	return it, nil
+}
+
 // UserToken represents a user token.
 type UserToken [tokenSize]byte
 
@@ -152,6 +177,31 @@ func NewMetadataToken() MetadataToken {
 	copy(mt[:], bytes[:])
 
 	return mt
+}
+
+// parseMetadataToken takes a string in the form of ut_base32 and parses it
+// into a MetadataToken
+func parseMetadataToken(s string) (MetadataToken, error) {
+	var mt MetadataToken
+
+	if !strings.HasPrefix(s, metadataTokenPrefix) {
+		return mt, fmt.Errorf("could not parseMetadataToken: invalid prefix")
+	}
+
+	s = strings.TrimPrefix(s, metadataTokenPrefix)
+
+	data, err := tokenEncoder.DecodeString(s)
+	if err != nil {
+		return mt, fmt.Errorf("could not parseMetadataToken: %v", err)
+	}
+
+	if len(data) != tokenSize {
+		return mt, fmt.Errorf("could not parseMetadataToken: invalid length")
+	}
+
+	copy(mt[:], data)
+
+	return mt, nil
 }
 
 // VersionToken represents a version token.
