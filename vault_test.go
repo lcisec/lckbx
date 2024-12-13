@@ -27,7 +27,7 @@ func TestVault(t *testing.T) {
 
 	// Ensure individual data types work as expected
 	t.Run("Test Keyset", testKeyset)
-	// t.Run("Test Metadata", testMetadata)
+	t.Run("Test Metadata", testMetadata)
 	// t.Run("Test Item", testItem)
 	// t.Run("Test User", testUser)
 

@@ -11,6 +11,7 @@ import (
 type KeysetItem struct {
 	BaseKey        BaseKey
 	DeriverVersion VersionToken
+	CrypterVersion VersionToken
 	InUse          bool
 }
 
@@ -18,6 +19,7 @@ type KeysetItem struct {
 func (k *KeysetItem) Equal(k2 KeysetItem) bool {
 	return k.BaseKey.String() == k2.BaseKey.String() &&
 		k.DeriverVersion.String() == k2.DeriverVersion.String() &&
+		k.CrypterVersion.String() == k2.CrypterVersion.String() &&
 		k.InUse == k2.InUse
 }
 

@@ -10,15 +10,13 @@ type ItemMetadata struct {
 	ItemId       ItemToken
 	Name         string
 	KeyVersion   VersionToken
-	CryptVersion VersionToken
 }
 
-func NewItemMetadata(name string, kv, cv VersionToken) ItemMetadata {
+func NewItemMetadata(name string, kv VersionToken) ItemMetadata {
 	return ItemMetadata{
 		ItemId:       NewItemToken(),
 		Name:         name,
 		KeyVersion:   kv,
-		CryptVersion: cv,
 	}
 }
 

@@ -8,30 +8,29 @@ import (
 )
 
 var (
-	keysetDatabase         = "keyset_test.db"
-	keysetEncryptionKey    = []byte{118, 252, 88, 61, 49, 10, 153, 183, 89, 126, 199, 34, 146, 149, 60, 66, 118, 115, 234, 49, 121, 57, 39, 46, 252, 161, 43, 218, 73, 46, 229, 78}
-	keysetTestToken        = "kt_J23BPOHMXA5FMYNHEBYB6HKOUD5G5THP7YEWTFLMWBJKZ2TRSNEQ"
-	keysetBadVersion       = "vt_6FLNEXXJ2WRZXJ3T3SZKH3CSM5YREJXT3ZZ5VZDIPYDUKVMBFVNA"
-	keysetBaseKey          = "bk_IUFKMB36LWM4B3TYBVYAZ2TKT4PJNKRNOANYKAARZFTHGDLSRU3A"
-	keysetItemToken        = "it_GJSQX4U5YHQRMQNFZT7RPYLBZZ2ORNBI3JLPGJNFRWMAN5SH4UZQ"
-	keysetMetadataToken    = "mt_TCVM43ZF5YSSZCH74KO3F7FHMS2GKBTDMNPPI4KBWMRDJDGPTTHA"
-	keysetItemCryptKey     = "ck_VHBBWL2GEWDAUGVNQLZ2VPJTVP4IY4WQ4OWUPCQYTB6MLOP4JREQ"
-	keysetMetadataCryptKey = "ck_GPH2E7OFIQUTK7VOGFEWDTUWHKBF7Y3CHGVMO5M6MGVEEGSLKM2Q"
+	metadataDatabase         = "metadata_test.db"
+	metadataEncryptionKey    = []byte{118, 252, 88, 61, 49, 10, 153, 183, 89, 126, 199, 34, 146, 149, 60, 66, 118, 115, 234, 49, 121, 57, 39, 46, 252, 161, 43, 218, 73, 46, 229, 78}
+	metadataTestToken        = "kt_J23BPOHMXA5FMYNHEBYB6HKOUD5G5THP7YEWTFLMWBJKZ2TRSNEQ"
+	metadataBadVersion       = "vt_6FLNEXXJ2WRZXJ3T3SZKH3CSM5YREJXT3ZZ5VZDIPYDUKVMBFVNA"
+	// keysetBaseKey          = "bk_IUFKMB36LWM4B3TYBVYAZ2TKT4PJNKRNOANYKAARZFTHGDLSRU3A"
+	// keysetItemToken        = "it_GJSQX4U5YHQRMQNFZT7RPYLBZZ2ORNBI3JLPGJNFRWMAN5SH4UZQ"
+	// keysetMetadataToken    = "mt_TCVM43ZF5YSSZCH74KO3F7FHMS2GKBTDMNPPI4KBWMRDJDGPTTHA"
+	// keysetItemCryptKey     = "ck_VHBBWL2GEWDAUGVNQLZ2VPJTVP4IY4WQ4OWUPCQYTB6MLOP4JREQ"
+	// keysetMetadataCryptKey = "ck_GPH2E7OFIQUTK7VOGFEWDTUWHKBF7Y3CHGVMO5M6MGVEEGSLKM2Q"
 )
 
-func testKeyset(t *testing.T) {
-	t.Run("Test New Keyset", testNewKeyset)
-	t.Run("Test Keyset Equality", testKeysetEquality)
-	t.Run("Test Keyset Items", testKeysetItems)
-	t.Run("Test Keyset Derivation", testKeysetDerivation)
-	t.Run("Test Keyset Storage", testKeysetStorage)
+func testMetadata(t *testing.T) {
+	t.Run("Test New Metadata", testNewMetadata)
+	t.Run("Test Metadata Equality", testMetadataEquality)
+	t.Run("Test Metadata Items", testMetadataItems)
+	t.Run("Test Metadata Storage", testMetadataStorage)
 }
 
-func testNewKeyset(t *testing.T) {
+func testNewMetadata(t *testing.T) {
 	fmt.Println(t.Name())
 
-	ksid, _ := parseKeysetToken(keysetTestToken)
-	ks := NewKeyset(ksid)
+	mdid, _ := parseMetadataToken(metadataTestToken)
+	md := NewMetadata(mdid)
 
 	if len(ks.Keys) != 1 {
 		t.Fatal("Expected 1 key in Keyset, found", len(ks.Keys))
