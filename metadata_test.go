@@ -2,21 +2,14 @@ package vault
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"testing"
 )
 
 var (
-	metadataDatabase         = "metadata_test.db"
-	metadataEncryptionKey    = []byte{118, 252, 88, 61, 49, 10, 153, 183, 89, 126, 199, 34, 146, 149, 60, 66, 118, 115, 234, 49, 121, 57, 39, 46, 252, 161, 43, 218, 73, 46, 229, 78}
-	metadataTestToken        = "kt_J23BPOHMXA5FMYNHEBYB6HKOUD5G5THP7YEWTFLMWBJKZ2TRSNEQ"
-	metadataBadVersion       = "vt_6FLNEXXJ2WRZXJ3T3SZKH3CSM5YREJXT3ZZ5VZDIPYDUKVMBFVNA"
-	// keysetBaseKey          = "bk_IUFKMB36LWM4B3TYBVYAZ2TKT4PJNKRNOANYKAARZFTHGDLSRU3A"
-	// keysetItemToken        = "it_GJSQX4U5YHQRMQNFZT7RPYLBZZ2ORNBI3JLPGJNFRWMAN5SH4UZQ"
-	// keysetMetadataToken    = "mt_TCVM43ZF5YSSZCH74KO3F7FHMS2GKBTDMNPPI4KBWMRDJDGPTTHA"
-	// keysetItemCryptKey     = "ck_VHBBWL2GEWDAUGVNQLZ2VPJTVP4IY4WQ4OWUPCQYTB6MLOP4JREQ"
-	// keysetMetadataCryptKey = "ck_GPH2E7OFIQUTK7VOGFEWDTUWHKBF7Y3CHGVMO5M6MGVEEGSLKM2Q"
+	metadataDatabase      = "metadata_test.db"
+	metadataEncryptionKey = []byte{118, 252, 88, 61, 49, 10, 153, 183, 89, 126, 199, 34, 146, 149, 60, 66, 118, 115, 234, 49, 121, 57, 39, 46, 252, 161, 43, 218, 73, 46, 229, 78}
+	metadataTestToken     = "mt_6SAQXDCNAPLEOACUIFPQI6HW3R5DF4U3LZHT2GOZCTHPNHLN7B5Q"
 )
 
 func testMetadata(t *testing.T) {
@@ -32,227 +25,139 @@ func testNewMetadata(t *testing.T) {
 	mdid, _ := parseMetadataToken(metadataTestToken)
 	md := NewMetadata(mdid)
 
-	if len(ks.Keys) != 1 {
-		t.Fatal("Expected 1 key in Keyset, found", len(ks.Keys))
-	}
-
-	key, ok := ks.Keys[ks.Latest.String()]
-	if !ok {
-		t.Fatal("Expected", ks.Latest.String(), "in Keyset.Keys, but was not found")
-	}
-
-	if !strings.HasPrefix(key.BaseKey.String(), baseKeyPrefix) {
-		t.Fatal("Expected BaseKey, found", key.BaseKey.String())
-	}
-
-	if key.DeriverVersion.String() != argonBlakeDeriverVersion {
-		t.Fatal("Expected", argonBlakeDeriverVersion, ", received", key.DeriverVersion.String())
-	}
-
-	if key.InUse != true {
-		t.Fatal("Expected key to be marked in use but it was not")
+	if len(md.Items) != 0 {
+		t.Fatal("Expected 0 MetadataItems in Metadata, found", len(md.Items))
 	}
 }
 
-func testKeysetEquality(t *testing.T) {
-	ksid, err := parseKeysetToken(keysetTestToken)
+func testMetadataEquality(t *testing.T) {
+	mdId, err := parseMetadataToken(metadataTestToken)
 	if err != nil {
-		t.Fatal("Expected", keysetTestToken, ", received", ksid)
+		t.Fatal("Expected", metadataTestToken, ", received", mdId, err)
 	}
+
+	iid := NewItemToken()
 	kid := NewVersionToken()
-	dv, _ := parseVersionToken(argonBlakeDeriverVersion)
-	bk, _ := parseBaseKey(keysetBaseKey)
 
-	ksItem := KeysetItem{
-		BaseKey:        bk,
-		DeriverVersion: dv,
-		InUse:          true,
+	mdItem := ItemMetadata{
+		ItemId:     iid,
+		Name:       "Metadata Item 1",
+		KeyVersion: kid,
 	}
 
-	// Create two identical Keysets and ensure they are equal.
-	ks1 := Keyset{
-		KeysetId: ksid,
-		mutex:    &sync.RWMutex{},
-		Keys:     make(map[string]KeysetItem),
-		Latest:   kid,
+	// Create two identical Metadata objects and ensure they are equal.
+	md1 := Metadata{
+		MetadataId: mdId,
+		mutex:      &sync.RWMutex{},
+		Items:      make(map[string]ItemMetadata),
 	}
 
-	ks1.Keys[kid.String()] = ksItem
-
-	ks2 := Keyset{
-		KeysetId: ksid,
-		mutex:    &sync.RWMutex{},
-		Keys:     make(map[string]KeysetItem),
-		Latest:   kid,
+	md2 := Metadata{
+		MetadataId: mdId,
+		mutex:      &sync.RWMutex{},
+		Items:      make(map[string]ItemMetadata),
 	}
 
-	ks2.Keys[kid.String()] = ksItem
-
-	if !ks1.Equal(ks2) {
-		t.Fatalf("Expected equal keysets, received \n%+v\n%+v\n", ks1, ks2)
+	if !md1.Equal(md2) {
+		t.Fatalf("Expected equal Metadata, received \n%+v\n%+v\n", md1, md2)
 	}
 
-	ks2.AddKey(bk, dv)
+	// Modify one of the objects and ensure they are unequal.
+	md2.AddItem(mdItem)
 
-	if ks1.Equal(ks2) {
-		t.Fatalf("Expected unequal keysets, received \n%+v\n%+v\n", ks1, ks2)
+	if md1.Equal(md2) {
+		t.Fatalf("Expected unequal Metadata, received \n%+v\n%+v\n", md1, md2)
 	}
 }
 
-func testKeysetItems(t *testing.T) {
+func testMetadataItems(t *testing.T) {
 	fmt.Println(t.Name())
 
-	// Create a new Keyset to work with.
-	ksid, _ := parseKeysetToken(keysetTestToken)
-	ks := NewKeyset(ksid)
+	// Create a new Metadata to work with.
+	mid, _ := parseMetadataToken(metadataTestToken)
+	md := NewMetadata(mid)
+	kid := NewVersionToken()
 
-	// Get the first KeysetItem and its version token.
-	fVersion := ks.Latest
-	fKey, err := ks.GetLatestKey()
+	// Create a ItemMetadata to work with.
+	iid := NewItemToken()
+	mdItem := ItemMetadata{
+		ItemId:     iid,
+		Name:       "Metadata Item 1",
+		KeyVersion: kid,
+	}
+
+	// Add the item to the Metadata
+	md.AddItem(mdItem)
+
+	// Get the item from the Metadata
+	mdItem2, err := md.GetItem(iid)
 	if err != nil {
-		t.Fatal("Expected no error, received", err)
+		t.Fatalf("Expected no error, received %v", err)
 	}
 
-	// Add a second key and ensure the Latest value was updated.
-	dv, _ := parseVersionToken(argonBlakeDeriverVersion)
-	bk, _ := parseBaseKey(keysetBaseKey)
-	sVersion := ks.AddKey(bk, dv)
-	sKey, _ := ks.GetLatestKey()
-
-	if sVersion.String() != ks.Latest.String() {
-		t.Fatal("Expected", sVersion, ", received", ks.Latest)
+	if !mdItem.Equal(mdItem2) {
+		t.Fatalf("Expected equal MetadataItem, received \n%+v\n%+v\n", mdItem, mdItem2)
 	}
 
-	if sKey.BaseKey.String() != keysetBaseKey {
-		t.Fatal("Expected", keysetBaseKey, ", received", sKey.BaseKey)
-	}
+	// Update the item, save it, fetch it, and ensure they are still equal
+	mdItem.Name = "Metadata Item 2"
+	md.AddItem(mdItem)
 
-	// Verify we can get the first key by it's version token.
-	fKey2, err := ks.GetKey(fVersion)
+	mdItem2, err = md.GetItem(iid)
 	if err != nil {
-		t.Fatal("Expected no error, received", err)
+		t.Fatalf("Expected no error, received %v", err)
 	}
 
-	if !fKey.Equal(fKey2) {
-		t.Fatal("Expected retrieved key to equal generated key.")
+	if !mdItem.Equal(mdItem2) {
+		t.Fatalf("Expected equal ItemMetadata, received \n%+v\n%+v\n", mdItem, mdItem2)
 	}
 
-	// Ensure we get an error when trying to delete the latest key, an in use
-	// key, or a non-existent key.
-	err = ks.DeleteKey(sVersion)
+	// Delete the ItemMetadata object and ensure we cannot fetch it.
+	md.DeleteItem(iid)
+
+	_, err = md.GetItem(iid)
 	if err == nil {
-		t.Fatal("Expected error for deleting latest key, no error received.")
-	}
-
-	err = ks.DeleteKey(fVersion)
-	if err == nil {
-		t.Fatal("Expected error for deleting in use key, no error received.")
-	}
-
-	badVersion, _ := parseVersionToken(keysetBadVersion)
-	err = ks.DeleteKey(badVersion)
-	if err == nil {
-		t.Fatal("Expected error for deleting non-existent key, no error received.")
-	}
-
-	// Mark the first key as not in use and attempt to delete it. No errors
-	// should be received.
-	err = ks.Unused(fVersion)
-	if err != nil {
-		t.Fatal("Expected no error, received", err)
-	}
-
-	err = ks.DeleteKey(fVersion)
-	if err != nil {
-		t.Fatal("Expected no error, received", err)
-	}
-
-	// Set the Latest version to a non-existent value so that we can test
-	// deleting the last key.
-	ks.Latest = badVersion
-
-	err = ks.DeleteKey(sVersion)
-	if err == nil {
-		t.Fatal("Expected error for deleting last available key, no error received.")
+		t.Fatalf("Expected error since ItemMetadata was deleted, no error received.")
 	}
 }
 
-func testKeysetDerivation(t *testing.T) {
-	fmt.Println(t.Name())
-
-	// Create a new Keyset to work with.
-	ksid, _ := parseKeysetToken(keysetTestToken)
-	ks := NewKeyset(ksid)
-
-	// Since we don't know the initial random key generated when the Keyset
-	// was created, we need to add a new BaseKey to test the key derivation.
-	dv, _ := parseVersionToken(argonBlakeDeriverVersion)
-	bk, _ := parseBaseKey(keysetBaseKey)
-	lVersion := ks.AddKey(bk, dv)
-
-	// Test derivation for Items
-	itemToken, _ := parseItemToken(keysetItemToken)
-	ck, err := ks.GetNewItemKey(itemToken)
-	if err != nil {
-		t.Fatal("Expected no error, received", err)
-	}
-
-	if ck.String() != keysetItemCryptKey {
-		t.Fatal("Expected item crypt key", keysetItemCryptKey, ", received", ck)
-	}
-
-	ck, err = ks.GetItemKey(lVersion, itemToken)
-	if err != nil {
-		t.Fatal("Expected no error, received", err)
-	}
-
-	if ck.String() != keysetItemCryptKey {
-		t.Fatal("Expected item crypt key", keysetItemCryptKey, ", received", ck)
-	}
-
-	// Test derivation for Metadata
-	metadataToken, _ := parseMetadataToken(keysetMetadataToken)
-	ck, err = ks.GetNewMetadataKey(metadataToken)
-	if err != nil {
-		t.Fatal("Expected no error, received", err)
-	}
-
-	if ck.String() != keysetMetadataCryptKey {
-		t.Fatal("Expected item crypt key", keysetMetadataCryptKey, ", received", ck)
-	}
-
-	ck, err = ks.GetMetadataKey(lVersion, metadataToken)
-	if err != nil {
-		t.Fatal("Expected no error, received", err)
-	}
-
-	if ck.String() != keysetMetadataCryptKey {
-		t.Fatal("Expected item crypt key", keysetMetadataCryptKey, ", received", ck)
-	}
-}
-
-func testKeysetStorage(t *testing.T) {
+func testMetadataStorage(t *testing.T) {
 	fmt.Println(t.Name())
 
 	crypterVersion, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(keysetEncryptionKey, crypterVersion)
-	storer, _ := NewStore(keysetDatabase)
+	crypter := NewCrypter(metadataEncryptionKey, crypterVersion)
+	storer, _ := NewStore(metadataDatabase)
 
-	// Create a new Keyset to work with.
-	ksid, _ := parseKeysetToken(keysetTestToken)
-	ks := NewKeyset(ksid)
+	// Create a new Metadata to work with.
+	mid, _ := parseMetadataToken(metadataTestToken)
+	md := NewMetadata(mid)
 
-	err := ks.Save(&storer, crypter)
+	// Create a MetadataItem to work with.
+	iid := NewItemToken()
+	kid := NewVersionToken()
+
+	mdItem := ItemMetadata{
+		ItemId:     iid,
+		Name:       "Metadata Item 1",
+		KeyVersion: kid,
+	}
+
+	// Add the item to the Metadata
+	md.AddItem(mdItem)
+
+	// Save the Metadata object to the database, retrieve it, verify the
+	// retrieved matches the original.
+	err := md.Save(&storer, crypter)
 	if err != nil {
 		t.Fatal("Expected no error, received", err)
 	}
 
-	ks2, err := NewKeysetFromStore(&storer, crypter, ksid)
+	md2, err := NewMetadataFromStore(&storer, crypter, mid)
 	if err != nil {
 		t.Fatal("Expected no error, received", err)
 	}
 
-	if !ks.Equal(ks2) {
-		t.Fatal("Expected stored Keyset to equal created Keyset")
+	if !md.Equal(md2) {
+		t.Fatal("Expected stored Metadata to equal created Metadata")
 	}
 }

@@ -6,8 +6,9 @@ import (
 	"sync"
 )
 
-// keysetItem stores a BaseKey and the VersionToken of the deriver used to
-// generate additional keys from the BaseKey.
+// keysetItem stores a BaseKey, the VersionToken of the deriver used to
+// generate additional keys from the BaseKey, and the VersionToken of the
+// crypter used for encryption.
 type KeysetItem struct {
 	BaseKey        BaseKey
 	DeriverVersion VersionToken

@@ -7,24 +7,59 @@ import (
 )
 
 type ItemMetadata struct {
-	ItemId       ItemToken
-	Name         string
-	KeyVersion   VersionToken
+	ItemId     ItemToken
+	Name       string
+	KeyVersion VersionToken
+}
+
+// Equal determines if two KeysetItem objects are the same.
+func (i *ItemMetadata) Equal(i2 ItemMetadata) bool {
+	return i.ItemId.String() == i2.ItemId.String() &&
+		i.Name == i2.Name &&
+		i.KeyVersion.String() == i2.KeyVersion.String()
 }
 
 func NewItemMetadata(name string, kv VersionToken) ItemMetadata {
 	return ItemMetadata{
-		ItemId:       NewItemToken(),
-		Name:         name,
-		KeyVersion:   kv,
+		ItemId:     NewItemToken(),
+		Name:       name,
+		KeyVersion: kv,
 	}
 }
 
 type Metadata struct {
 	MetadataId MetadataToken
-	KeysetId   KeysetToken
 	mutex      *sync.RWMutex
 	Items      map[string]ItemMetadata
+}
+
+// Equal determines if two Metadata objects are the same.
+func (m *Metadata) Equal(m2 Metadata) bool {
+	equal := true
+
+	if m.MetadataId.String() != m2.MetadataId.String() {
+		equal = false
+	}
+
+	if len(m.Items) != len(m2.Items) {
+		equal = false
+	}
+
+	for mapKey, mdi := range m.Items {
+		mdiId, _ := parseItemToken(mapKey)
+		mdi2, err := m2.GetItem(mdiId)
+		if err != nil {
+			equal = false
+			break
+		}
+
+		if !mdi.Equal(mdi2) {
+			equal = false
+			break
+		}
+	}
+
+	return equal
 }
 
 func (m *Metadata) AddItem(i ItemMetadata) {
@@ -107,6 +142,8 @@ func newMetadataFromBytes(crypt crypter, encrypted []byte, ad []byte) (Metadata,
 	if err != nil {
 		return md, err
 	}
+
+	md.mutex = &sync.RWMutex{}
 
 	return md, nil
 }
