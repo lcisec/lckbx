@@ -1,0 +1,90 @@
+package vault
+
+import (
+	"fmt"
+	"bytes"
+	"testing"
+)
+
+var (
+	noteDatabase      = "note_test.db"
+	noteData1  = []byte("The rain in Spain falls mainly in the plain.")
+	noteData2 =  []byte("The quick brown fox jumps over the lazy dog.")
+)
+
+func testNoteItem(t *testing.T) {
+	t.Run("Test New NoteItem", testNewNoteItem)
+	t.Run("Test NoteItem Equality", testNoteItemEquality)
+	t.Run("Test NoteItem Storage", testNoteItemStorage)
+	// t.Run("Test Create User", testCreateUser)
+}
+
+func testNewNoteItem(t *testing.T) {
+	fmt.Println(t.Name())
+
+	note := NewNoteItem()
+	
+	note.Update(noteData1)
+	if !bytes.Equal(note.Data, noteData1) {
+		t.Fatalf("Expected %s, received %s", noteData1, note.Data)
+	}
+
+	note.Update(noteData2)
+	if !bytes.Equal(note.Data, noteData2) {
+		t.Fatalf("Expected %s, received %s", noteData2, note.Data)
+	}
+}
+
+func testNoteItemEquality(t *testing.T) {
+	iid := NewItemToken()
+	
+	// Create two identical NoteItems and ensure they are equal.
+	note1 := NoteItem{
+		ItemId:     iid,
+		Data: noteData1,
+	}
+
+	note2 := NoteItem{
+		ItemId:     iid,
+		Data: noteData1,
+	}
+
+	if !note1.Equal(note2) {
+		t.Fatalf("Expected equal NoteItem, received \n%+v\n%+v\n", note1, note2)
+	}
+
+	// Modify one of the objects and ensure they are unequal.
+	note2.Update(noteData2)
+
+	if note1.Equal(note2) {
+		t.Fatalf("Expected unequal NoteItems, received \n%+v\n%+v\n", note1, note2)
+	}
+}
+
+func testNoteItemStorage(t *testing.T) {
+	fmt.Println(t.Name())
+
+	crypterVersion, _ := parseVersionToken(xChaChaCrypterVersion)
+	crypter := NewCrypter(userEncryptionKey, crypterVersion)
+	storer, _ := NewStore(noteDatabase)
+
+	// Create a new NoteItem to work with.
+	note1 := NewNoteItem()
+	note1.Update(noteData1)
+
+	// Save the NoteItem object to the database, retrieve it, verify the
+	// retrieved NoteItem matches the original.
+	err := note1.Save(&storer, crypter)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	note2, err := NewNoteItemFromStore(&storer, crypter, note1.ItemId)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	if !note1.Equal(note2) {
+		t.Fatal("Expected stored NoteItem to equal created NoteItem")
+	}
+}

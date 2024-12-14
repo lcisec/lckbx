@@ -268,3 +268,28 @@ func NewAuthToken() AuthToken {
 
 	return at
 }
+
+// parseAuthToken takes a string in the form of at_base32 and parses it
+// into an AuthToken
+func parseAuthToken(s string) (AuthToken, error) {
+	var at AuthToken
+
+	if !strings.HasPrefix(s, authTokenPrefix) {
+		return at, fmt.Errorf("could not parseAuthToken: invalid prefix")
+	}
+
+	s = strings.TrimPrefix(s, authTokenPrefix)
+
+	data, err := tokenEncoder.DecodeString(s)
+	if err != nil {
+		return at, fmt.Errorf("could not parseAuthToken: %v", err)
+	}
+
+	if len(data) != tokenSize {
+		return at, fmt.Errorf("could not parseAuthToken: invalid length")
+	}
+
+	copy(at[:], data)
+
+	return at, nil
+}

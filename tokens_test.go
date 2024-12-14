@@ -39,6 +39,15 @@ func testItemToken(t *testing.T) {
 		t.Fatal("ItemToken has incorrect prefix.")
 	}
 
+	parsed, err := parseItemToken(token)
+	if err != nil {
+		t.Fatal("Expected no error, recieved", err)
+	}
+
+	if parsed.String() != token {
+		t.Fatal("Expected", token, ", received", parsed.String())
+	}
+
 	token = strings.TrimPrefix(token, itemTokenPrefix)
 	if len(token) != tokenBase32Size {
 		t.Fatal("Expected", tokenBase32Size, "base32 characters, received", len(token))
@@ -108,6 +117,15 @@ func testMetadataToken(t *testing.T) {
 		t.Fatal("MetadataToken has incorrect prefix.")
 	}
 
+	parsed, err := parseMetadataToken(token)
+	if err != nil {
+		t.Fatal("Expected no error, recieved", err)
+	}
+
+	if parsed.String() != token {
+		t.Fatal("Expected", token, ", received", parsed.String())
+	}
+
 	token = strings.TrimPrefix(token, metadataTokenPrefix)
 	if len(token) != tokenBase32Size {
 		t.Fatal("Expected", tokenBase32Size, "base32 characters, received", len(token))
@@ -149,6 +167,15 @@ func testAuthToken(t *testing.T) {
 
 	if !strings.HasPrefix(token, authTokenPrefix) {
 		t.Fatal("AuthToken has incorrect prefix.")
+	}
+
+	parsed, err := parseAuthToken(token)
+	if err != nil {
+		t.Fatal("Expected no error, recieved", err)
+	}
+
+	if parsed.String() != token {
+		t.Fatal("Expected", token, ", received", parsed.String())
 	}
 
 	token = strings.TrimPrefix(token, authTokenPrefix)

@@ -14,6 +14,13 @@ type User struct {
 	MetadataId MetadataToken
 }
 
+func (u *User) Equal(u2 User) bool {
+	return u.UserId.String() == u2.UserId.String() &&
+		u.UserName == u2.UserName &&
+		u.KeysetId.String() == u2.KeysetId.String() &&
+		u.MetadataId.String() == u2.MetadataId.String()
+}
+
 func (u *User) bytes(crypt crypter) ([]byte, error) {
 	var encrypted []byte
 
