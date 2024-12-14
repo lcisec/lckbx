@@ -40,7 +40,8 @@ func (u *User) bytes(crypt crypter) ([]byte, error) {
 // Create adds a new User, as encrypted bytes, to the given storer.
 func (u *User) Create(store storer, crypt crypter, aid AuthToken) error {
 	userId := store.GetUserId(u.UserName)
-	if userId.String() != "" {
+
+	if userId.String() != "ut_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" {
 		return fmt.Errorf("could not User.Create: user already exists")
 	}
 
@@ -64,7 +65,7 @@ func (u *User) Create(store storer, crypt crypter, aid AuthToken) error {
 }
 
 // Save stores the User as encrypted bytes in the given storer.
-func (u *User) Save(store storer, crypt crypter, aid AuthToken) error {
+func (u *User) save(store storer, crypt crypter, aid AuthToken) error {
 	bytes, err := u.bytes(crypt)
 	if err != nil {
 		return fmt.Errorf("could not User.Save: %v", err)

@@ -1,15 +1,15 @@
 package vault
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 	"testing"
 )
 
 var (
-	noteDatabase      = "note_test.db"
-	noteData1  = []byte("The rain in Spain falls mainly in the plain.")
-	noteData2 =  []byte("The quick brown fox jumps over the lazy dog.")
+	noteDatabase = "note_test.db"
+	noteData1    = []byte("The rain in Spain falls mainly in the plain.")
+	noteData2    = []byte("The quick brown fox jumps over the lazy dog.")
 )
 
 func testNoteItem(t *testing.T) {
@@ -23,7 +23,7 @@ func testNewNoteItem(t *testing.T) {
 	fmt.Println(t.Name())
 
 	note := NewNoteItem()
-	
+
 	note.Update(noteData1)
 	if !bytes.Equal(note.Data, noteData1) {
 		t.Fatalf("Expected %s, received %s", noteData1, note.Data)
@@ -37,16 +37,16 @@ func testNewNoteItem(t *testing.T) {
 
 func testNoteItemEquality(t *testing.T) {
 	iid := NewItemToken()
-	
+
 	// Create two identical NoteItems and ensure they are equal.
 	note1 := NoteItem{
-		ItemId:     iid,
-		Data: noteData1,
+		ItemId: iid,
+		Data:   noteData1,
 	}
 
 	note2 := NoteItem{
-		ItemId:     iid,
-		Data: noteData1,
+		ItemId: iid,
+		Data:   noteData1,
 	}
 
 	if !note1.Equal(note2) {

@@ -117,8 +117,7 @@ func (s *Store) SaveUserId(username string, uid UserToken) error {
 // random token is returned.
 func (s *Store) GetUserId(username string) UserToken {
 	var uid []byte
-
-	ut := NewUserToken()
+	var ut UserToken
 
 	uid = s.read(authBucket, username)
 	if uid == nil {

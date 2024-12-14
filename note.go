@@ -1,15 +1,15 @@
 package vault
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"bytes"
 )
 
 // The NoteItem struct holds a note.
 type NoteItem struct {
-	ItemId     ItemToken
-	Data       []byte
+	ItemId ItemToken
+	Data   []byte
 }
 
 func (n *NoteItem) Equal(n2 NoteItem) bool {
@@ -55,7 +55,7 @@ func (n *NoteItem) Save(store storer, crypt crypter) error {
 // NewNoteItem creates a new NoteItem object.
 func NewNoteItem() NoteItem {
 	return NoteItem{
-		ItemId:     NewItemToken(),
+		ItemId: NewItemToken(),
 		Data:   make([]byte, 1),
 	}
 }
