@@ -76,7 +76,7 @@ func testUserStorage(t *testing.T) {
 
 	// Save the User object to the database, retrieve it, verify the retrieved
 	// User matches the original.
-	err := user.save(&storer, crypter, aid)
+	err := user.Save(&storer, crypter, aid)
 	if err != nil {
 		t.Fatal("Expected no error, received", err)
 	}

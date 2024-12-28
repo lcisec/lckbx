@@ -29,12 +29,12 @@ func testArgonBlakeDeriveBaseKey(t *testing.T) {
 	}
 
 	deriver := NewDeriver(deriverVersion)
-	_, err = deriver.DeriveBaseKey(username, badPassword)
+	_, err = deriver.DeriveBaseKey(deriveUsername, deriveBadPassword)
 	if err == nil {
 		t.Fatal("Expected error, received nil")
 	}
 
-	bk, err := deriver.DeriveBaseKey(username, goodPassword)
+	bk, err := deriver.DeriveBaseKey(deriveUsername, deriveGoodPassword)
 	if err != nil {
 		t.Fatal("Expected no error, received", err)
 	}
@@ -53,7 +53,7 @@ func testArgonBlakeDeriveAuthKey(t *testing.T) {
 	}
 
 	deriver := NewDeriver(deriverVersion)
-	bk, _ := deriver.DeriveBaseKey(username, goodPassword)
+	bk, _ := deriver.DeriveBaseKey(deriveUsername, deriveGoodPassword)
 
 	ak, err := deriver.DeriveAuthKey(bk)
 	if err != nil {
@@ -74,7 +74,7 @@ func testArgonBlakeDeriveCryptKey(t *testing.T) {
 	}
 
 	deriver := NewDeriver(deriverVersion)
-	bk, _ := deriver.DeriveBaseKey(username, goodPassword)
+	bk, _ := deriver.DeriveBaseKey(deriveUsername, deriveGoodPassword)
 
 	ck, err := deriver.DeriveCryptKey(bk, nil)
 	if err != nil {
@@ -104,7 +104,7 @@ func testArgonBlakeDeriveAuthToken(t *testing.T) {
 	}
 
 	deriver := NewDeriver(deriverVersion)
-	bk, _ := deriver.DeriveBaseKey(username, goodPassword)
+	bk, _ := deriver.DeriveBaseKey(deriveUsername, deriveGoodPassword)
 
 	uid := NewUserToken()
 	copy(uid[:], userTokenBytes)

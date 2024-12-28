@@ -35,150 +35,220 @@ func getKeysAndToken(d deriver, username, password string, uid UserToken) (AuthK
 }
 
 // Register
-//  1. Generate a random recovery phrase (that will act like a password.)
-//  2. Create a new User, Keyset, and Metadata.
-//  3. Store the User and Keyset encrypted with the user's password.
-//  4. Store the User and Keyset encrypted with the recovery password.
-//  5. Store the Metadata encrypted with the Metadata key in the keyset.
-//  6. Return the recovery key to the user.
-func registerUser(store storer, username, password string) (string, error) {
-	recoveryPhrase := newRecoveryPhrase()
+//  1. Create a new User, Keyset, and Metadata.
+//  2. Store the User and Keyset encrypted with the user's password.
+//  3. Store the Metadata encrypted with the Metadata key derived from the
+//     keyset.
+func register(store storer, username, password string) error {
+	// 1. Create a new User, Keyset, and Metadata.
 	user := NewUser(username)
 	keyset := NewKeyset(user.KeysetId)
 	metadata := NewMetadata(user.MetadataId)
 
-	err := storeUser(store, username, password, user, keyset)
-	if err != nil {
-		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
-	}
-
-	err = storeUser(store, username, recoveryPhrase, user, keyset)
-	if err != nil {
-		// cleanup User
-		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
-	}
-
-	key, err := keyset.GetNewMetadataKey(user.MetadataId)
-	if err != nil {
-		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
-	}
-
-	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
-	if err != nil {
-		return recoveryPhrase, fmt.Errorf("could not regiserUser: %v", err)
-	}
-
-	crypt := NewCrypter(key[:], crypterVersion)
-	err = metadata.Save(store, crypt)
-	if err != nil {
-		return recoveryPhrase, fmt.Errorf("could not registerUser: %v", err)
-	}
-
-	return recoveryPhrase, nil
-}
-
-// storeUser
-//  1. Derive an AuthKey, AuthToken, and CryptKey from the username and password.
-//  2. Save the User to the store using the derived AuthId and AuthKey.
-//  3. Save the Keyset to the store using the derived encryption key.
-func storeUser(store storer, username, password string, user User, keyset Keyset) error {
+	// 2.  Store the User and Keyset encrypted with the user's password.
+	// 2.a Parse the deriver version token and get a NewDeriver.
 	deriverVersion, err := parseVersionToken(argonBlakeDeriverVersion)
 	if err != nil {
-		return fmt.Errorf("could not storeUser: %v", err)
-	}
-
-	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
-	if err != nil {
-		return fmt.Errorf("could not storeUser: %v", err)
+		return fmt.Errorf("could not registerUser: %v", err)
 	}
 
 	deriver := NewDeriver(deriverVersion)
 
+	// 2.b Derive the needed Keys and Tokens from the username, password,
+	//     and User Id.
 	ak, at, ck, err := getKeysAndToken(deriver, username, password, user.UserId)
 	if err != nil {
-		return fmt.Errorf("could not storeUser: %v", err)
+		return fmt.Errorf("could not registerUser: %v", err)
 	}
 
+	// 2.c Parse the crypter version token.
+	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
+	if err != nil {
+		return fmt.Errorf("could not registerUser: %v", err)
+	}
+
+	// 2.d Get a NewCrypter based on the AuthKey and create the new encrypted
+	//     user account in the database.
 	crypt := NewCrypter(ak[:], crypterVersion)
 	err = user.Create(store, crypt, at)
 	if err != nil {
-		return fmt.Errorf("could not storeUser: %v", err)
+		return fmt.Errorf("could not registerUser: %v", err)
 	}
 
+	// 2.e Get a NewCrypter based on the CryptKey and save the encrypted
+	//     Keyset to the database.
 	crypt = NewCrypter(ck[:], crypterVersion)
 	err = keyset.Save(store, crypt)
 	if err != nil {
-		return fmt.Errorf("could not storeUser: %v", err)
+		return fmt.Errorf("could not registerUser: %v", err)
+	}
+
+	// 3.  Store the Metadata encrypted with the MetadataKey derived from the
+	//     Keyset.
+	// 3.a Derive a new CryptKey to encrypt the Metadata
+	key, err := keyset.GetNewMetadataKey(user.MetadataId)
+	if err != nil {
+		return fmt.Errorf("could not registerUser: %v", err)
+	}
+
+	// 3.b Create a NewCrypter based on the derived CryptKey and save the
+	//     encrypted Metadata to the database.
+	crypt = NewCrypter(key[:], crypterVersion)
+	err = metadata.Save(store, crypt)
+	if err != nil {
+		return fmt.Errorf("could not registerUser: %v", err)
 	}
 
 	return nil
 }
 
 // Login
-// 1. Get the userID from the database
-// 2. Derive an AuthToken, AuthKey, and CryptKey.
-// 3. Get the user from the store using the AuthToken and AuthKey
+// 1. Get the UserId from the database using the given username.
+// 2. Derive an AuthToken, AuthKey, and CryptKey for the user.
+// 3. Get the User from the store using the AuthToken and AuthKey
 // 4. Get the Keyset from the store using the user's KeysetId
 // 5. Get the Metadata from the store using the user's MetadataId
-func login(store storer, username, password string) (Keyset, Metadata, error) {
+// 6. Return the User, Keyset, and Metadata if there are no errors.
+func login(store storer, username, password string) (User, Keyset, Metadata, error) {
 	var ks Keyset
 	var md Metadata
+	var u User
 
-	deriverVersion, err := parseVersionToken(argonBlakeDeriverVersion)
-	if err != nil {
-		return ks, md, fmt.Errorf("could not login: %v", err)
-	}
-
-	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
-	if err != nil {
-		return ks, md, fmt.Errorf("could not login: %v", err)
-	}
-
-	deriver := NewDeriver(deriverVersion)
+	// 1.  Get the UserId from the database using the given username.
 	userId := store.GetUserId(username)
 
+	// 2.  Derive an AuthToken, AuthKey, and CryptKey for the user.
+	// 2.a Parse the deriver version token.
+	deriverVersion, err := parseVersionToken(argonBlakeDeriverVersion)
+	if err != nil {
+		return u, ks, md, fmt.Errorf("could not login: %v", err)
+	}
+
+	// 2.b Create a new driver based on the version token.
+	deriver := NewDeriver(deriverVersion)
+
+	// 2.c Derive the user's keys and tokens.
 	ak, at, ck, err := getKeysAndToken(deriver, username, password, userId)
 	if err != nil {
-		return ks, md, fmt.Errorf("could not login: %v", err)
+		return u, ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
-	// Get our user from the database
+	// 3.  Get the User from the store using the AuthToken and AuthKey
+	// 3.a Parse the crypter version token.
+	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
+	if err != nil {
+		return u, ks, md, fmt.Errorf("could not login: %v", err)
+	}
+
+	// 3.b Create a NewCrypter with the AuthKey and load the encrypted User
+	//     from the store.
 	uCrypt := NewCrypter(ak[:], crypterVersion)
-	user, err := NewUserFromStore(store, uCrypt, at, userId)
+	u, err = NewUserFromStore(store, uCrypt, at, userId)
 	if err != nil {
-		return ks, md, fmt.Errorf("could not login: %v", err)
+		return u, ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
+	// 4.  Get the Keyset from the store using the user's KeysetId.
+	// 4.a Create a NewCrypter using the derived CryptKey and load the
+	//     encrypted Keyset from the store.
 	kCrypt := NewCrypter(ck[:], crypterVersion)
-	ks, err = NewKeysetFromStore(store, kCrypt, user.KeysetId)
+	ks, err = NewKeysetFromStore(store, kCrypt, u.KeysetId)
 	if err != nil {
-		return ks, md, fmt.Errorf("could not login: %v", err)
+		return u, ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
-	key, err := ks.GetNewMetadataKey(user.MetadataId)
+	// 5.  Get the Metadata from the store using the user's MetadataId
+	// 5.a Derive the CryptKey for the Metadata.
+	key, err := ks.GetNewMetadataKey(u.MetadataId)
 	if err != nil {
-		return ks, md, fmt.Errorf("could not registerUser: %v", err)
+		return u, ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
+	// 5.b Create a NewCrypter using the derived CryptKey and load the
+	//     encrypted Metadata from the store.
 	mCrypt := NewCrypter(key[:], crypterVersion)
-	md, err = NewMetadataFromStore(store, mCrypt, user.MetadataId)
+	md, err = NewMetadataFromStore(store, mCrypt, u.MetadataId)
 	if err != nil {
-		return ks, md, fmt.Errorf("could not login: %v", err)
+		return u, ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
-	return ks, md, nil
+	// 6. Return the User, Keyset, and Metadata if there are no errors.
+	return u, ks, md, nil
 }
 
 // Change Password
-//  1. Use current password or recovery key to get
-//  2. Generate a random recovery key
-//  3. Derive an AuthID, AuthKey, and CryptKey.
-//  4. Create a user and save it to the store, using the AuthId as the key and
-//     encrypting it with the AuthKey.
-//  5. Generate a new KeySet and ItemMetadata for the user.
-//  6. Encrypt the Keyset with the recovery key and save it.
-//  7. Encrypt the Keyset with the derived encryption key and save it.
-//  8. Encrypt the Metadata with the derived encryption key and save it.
+//  1. Get the User, Keyset, and Metadata by logging in.
+//  2. Derive a new AuthID, AuthKey, and CryptKey from the new password.
+//  3. Add a new BaseKey to the Keyset.
+//  4. Save the User and Keyset to the store encrypted with the new CryptKey.
+//  5. Save the Metadata encrypted with the new Metadata key in the keyset.
+func changePassword(store storer, username, oldPassword, newPassword string) error {
+	// 1.  Get the User, Keyset, and Metadata by logging in.
+	user, keyset, metadata, err := login(store, username, oldPassword)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	// 2.  Derive a new AuthID, AuthKey, and CryptKey from the new password.
+	// 2.a Parse the deriver version token and get a NewDeriver.
+	deriverVersion, err := parseVersionToken(argonBlakeDeriverVersion)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	deriver := NewDeriver(deriverVersion)
+
+	// 2.b Derive the needed Keys and Tokens from the username, new password,
+	//     and User Id.
+	ak, at, ck, err := getKeysAndToken(deriver, username, newPassword, user.UserId)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	// 3. Add a new BaseKey to the Keyset
+	keyset.AddKey(newBaseKey(), deriverVersion)
+
+	// 4.  Save the User and Keyset to the store
+	// 4.a Parse the crypter version token.
+	crypterVersion, err := parseVersionToken(xChaChaCrypterVersion)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	// 4.b Get a NewCrypter based on the new AuthKey and update the encrypted
+	//     User in the database.
+	crypt := NewCrypter(ak[:], crypterVersion)
+	err = user.Save(store, crypt, at)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	// 4.c Get a NewCrypter based on the new CryptKey and save the encrypted
+	//     Keyset to the database.
+	crypt = NewCrypter(ck[:], crypterVersion)
+	err = keyset.Save(store, crypt)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	// 3.  Store the Metadata encrypted with the MetadataKey derived from the
+	//     Keyset.
+	// 3.a Derive a new CryptKey to encrypt the Metadata
+	key, err := keyset.GetNewMetadataKey(user.MetadataId)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	// 3.b Create a NewCrypter based on the derived CryptKey and save the
+	//     encrypted Metadata to the database.
+	crypt = NewCrypter(key[:], crypterVersion)
+	err = metadata.Save(store, crypt)
+	if err != nil {
+		return fmt.Errorf("could not changePassword: %v", err)
+	}
+
+	return nil
+}
 
 // Purge Keys
 //  1. Read through all MetadataItems to get a list of active keys.

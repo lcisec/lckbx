@@ -65,7 +65,7 @@ func (u *User) Create(store storer, crypt crypter, aid AuthToken) error {
 }
 
 // Save stores the User as encrypted bytes in the given storer.
-func (u *User) save(store storer, crypt crypter, aid AuthToken) error {
+func (u *User) Save(store storer, crypt crypter, aid AuthToken) error {
 	bytes, err := u.bytes(crypt)
 	if err != nil {
 		return fmt.Errorf("could not User.Save: %v", err)

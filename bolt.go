@@ -165,6 +165,13 @@ func (s *Store) GetUser(aid AuthToken) ([]byte, error) {
 	return user, nil
 }
 
+// DeleteUser takes an AuthToken and removes the encrypted bytes associated
+// with it from the user bucket. The AuthToken is derived from the unique
+// UserToken associated with the user.
+func (s *Store) DeleteUser(aid AuthToken) error {
+	return s.delete(userBucket, aid.String())
+}
+
 // SaveMetadata takes a MetadataToken and the encrypted metadata bytes and
 // saves them to the metadata bucket.
 func (s *Store) SaveMetadata(mid MetadataToken, data []byte) error {
@@ -189,6 +196,12 @@ func (s *Store) GetMetadata(mid MetadataToken) ([]byte, error) {
 	return md, nil
 }
 
+// DeleteMetadata takes a MetadataToken and removes the encrypted bytes
+// associated with it from the metadata bucket.
+func (s *Store) DeleteMetadata(mid MetadataToken) error {
+	return s.delete(metadataBucket, mid.String())
+}
+
 // SaveKeyset takes a KeysetToken and the encrypted keyset bytes and saves
 // them to the keyset bucket.
 func (s *Store) SaveKeyset(kid KeysetToken, data []byte) error {
@@ -211,6 +224,12 @@ func (s *Store) GetKeyset(kid KeysetToken) ([]byte, error) {
 	}
 
 	return ks, nil
+}
+
+// DeleteKeyset takes a KeysetToken and removes the encrypted bytes associated
+// with it from the keyset bucket.
+func (s *Store) DeleteKeyset(kid KeysetToken) error {
+	return s.delete(keysetBucket, kid.String())
 }
 
 // SaveItem takes an ItemToken and the encrypted Item bytes and saves them

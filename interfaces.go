@@ -20,6 +20,7 @@ type storer interface {
 
 	GetUser(aid AuthToken) ([]byte, error)
 	SaveUser(aid AuthToken, data []byte) error
+	DeleteUser(aid AuthToken) error
 
 	GetKeyset(kid KeysetToken) ([]byte, error)
 	SaveKeyset(kid KeysetToken, data []byte) error
