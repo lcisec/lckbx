@@ -92,6 +92,14 @@ func (k *Keyset) AddKey(bk BaseKey, dv VersionToken) VersionToken {
 // Unused marks a KeysetItem in the Keyset as no longer in use so that it can
 // be purged.
 func (k *Keyset) Unused(v VersionToken) error {
+	if len(k.Keys) == 1 {
+		return fmt.Errorf("could not Keyset.Unused: only available key")
+	}
+
+	if v.String() == k.Latest.String() {
+		return fmt.Errorf("could not Keyset.Unused: latest key")
+	}
+	
 	key, err := k.GetKey(v)
 	if err != nil {
 		return fmt.Errorf("could not Keyset.Unused: %s does not exist", v)
