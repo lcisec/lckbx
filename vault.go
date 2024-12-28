@@ -107,8 +107,9 @@ func register(store storer, username, password string) error {
 // 2. Derive an AuthToken, AuthKey, and CryptKey for the user.
 // 3. Get the User from the store using the AuthToken and AuthKey
 // 4. Get the Keyset from the store using the user's KeysetId
-// 5. Get the Metadata from the store using the user's MetadataId
-// 6. Return the User, Keyset, and Metadata if there are no errors.
+// 5. Get the Metadata from the store using the user's MetadataId.
+// 6. Purge any unused keys.
+// 7. Return the User, Keyset, and Metadata if there are no errors.
 func login(store storer, username, password string) (User, Keyset, Metadata, error) {
 	var ks Keyset
 	var md Metadata
@@ -172,7 +173,10 @@ func login(store storer, username, password string) (User, Keyset, Metadata, err
 		return u, ks, md, fmt.Errorf("could not login: %v", err)
 	}
 
-	// 6. Return the User, Keyset, and Metadata if there are no errors.
+	// 6. Purge any unused keys.
+	purgeUnusedKeys(ks, md)
+
+	// 7. Return the User, Keyset, and Metadata if there are no errors.
 	return u, ks, md, nil
 }
 
@@ -252,9 +256,35 @@ func changePassword(store storer, username, oldPassword, newPassword string) err
 
 // Purge Keys
 //  1. Read through all MetadataItems to get a list of active keys.
-//  2. Read through all of the Keyset keys and if any of them are not active,
-//     purge it.
-//  3. This should be run on each login.
+//  2. Read through all of the Keyset keys and if any of them are not in use,
+//     set Key.Inuse to false.
+//  3. Purge unused keys.
+func purgeUnusedKeys(ks Keyset, md Metadata) {
+	// 1. Read through all MetadataItems to get a list of active keys.
+	inUseKeys := md.GetInUseKeys()
+
+	// 2. Read through all of the Keyset keys and if any of them are not in
+	//    use, set Key.InUse to false.
+	for keyId := range ks.Keys {
+		kid, _ := parseVersionToken(keyId)
+		inUse := false
+
+		for _, inUseKey := range inUseKeys {
+			if inUseKey == keyId {
+				inUse = true
+				break
+			}
+		}
+
+		// The keyId is not in the list of inUseKeys, mark the key as unused.
+		if inUse == false {
+			ks.Unused(kid)
+		}
+	}
+
+	// 3. Purge unused keys.
+	ks.PurgeKeys()
+}
 
 // Reencrypt
 // The reencrypt function is started at login and runs in the background until

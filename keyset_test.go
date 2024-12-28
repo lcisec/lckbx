@@ -23,6 +23,7 @@ func testKeyset(t *testing.T) {
 	t.Run("Test New Keyset", testNewKeyset)
 	t.Run("Test Keyset Equality", testKeysetEquality)
 	t.Run("Test Keyset Items", testKeysetItems)
+	t.Run("Test Keyset Purge", testKeysetPurge)
 	t.Run("Test Keyset Derivation", testKeysetDerivation)
 	t.Run("Test Keyset Storage", testKeysetStorage)
 }
@@ -175,6 +176,44 @@ func testKeysetItems(t *testing.T) {
 	err = ks.DeleteKey(sVersion)
 	if err == nil {
 		t.Fatal("Expected error for deleting last available key, no error received.")
+	}
+}
+
+func testKeysetPurge(t *testing.T) {
+	fmt.Println(t.Name())
+
+	// Create a new Keyset to work with.
+	ksid, _ := parseKeysetToken(keysetTestToken)
+	ks := NewKeyset(ksid)
+
+	// Get the first KeysetItem and its version token.
+	fVersion := ks.Latest
+	fKey, err := ks.GetLatestKey()
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	// Add a second key to the Keyset.
+	dv, _ := parseVersionToken(argonBlakeDeriverVersion)
+	bk, _ := parseBaseKey(keysetBaseKey)
+	ks.AddKey(bk, dv)
+
+	// Mark the first key as no longer in use and verify it.
+	ks.Unused(fVersion)
+	fKey, err = ks.GetKey(fVersion)
+	if err != nil {
+		t.Fatal("Expected no error, received", err)
+	}
+
+	if fKey.InUse != false {
+		t.Fatal("Expected key to be marked as not in use.")
+	}
+
+	// Purge the key and verify it is no longer in the Keyset Keys.
+	ks.PurgeKeys()
+	_, err = ks.GetKey(fVersion)
+	if err == nil {
+		t.Fatalf("Expected error after key purge, received nil.")
 	}
 }
 

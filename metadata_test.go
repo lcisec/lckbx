@@ -121,6 +121,36 @@ func testMetadataItems(t *testing.T) {
 	}
 }
 
+func testMetadataKeysInUse(t *testing.T) {
+	fmt.Println(t.Name())
+
+	// Create a new Metadata to work with.
+	mid, _ := parseMetadataToken(metadataTestToken)
+	md := NewMetadata(mid)
+	kid := NewVersionToken()
+
+	// Create a ItemMetadata to work with.
+	iid := NewItemToken()
+	mdItem := ItemMetadata{
+		ItemId:     iid,
+		Name:       "Metadata Item 1",
+		KeyVersion: kid,
+	}
+
+	// Add the item to the Metadata
+	md.AddItem(mdItem)
+
+	// Get a list of KeyVersions that are in use.
+	inUse := md.GetInUseKeys()
+	if len(inUse) != 1 {
+		t.Fatalf("Expected exactly one in use key, received %d", len(inUse))
+	}
+
+	if inUse[0] != kid.String() {
+		t.Fatal("Expected", kid, "to be in use but", inUse[0], "is in use.")
+	}
+}
+
 func testMetadataStorage(t *testing.T) {
 	fmt.Println(t.Name())
 

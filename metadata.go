@@ -88,6 +88,16 @@ func (m *Metadata) GetItem(iid ItemToken) (ItemMetadata, error) {
 	return item, nil
 }
 
+func (m *Metadata) GetInUseKeys() []string {
+	var keys []string
+
+	for _, item := range m.Items {
+		keys = append(keys, item.KeyVersion.String())
+	}
+
+	return keys
+}
+
 // bytes returns the Metadata as encrypted bytes using the given crypter.
 func (m *Metadata) bytes(crypt crypter) ([]byte, error) {
 	var encrypted []byte

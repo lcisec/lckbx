@@ -148,18 +148,19 @@ func testChangePassword(t *testing.T) {
 		t.Fatalf("Expected keyset Ids to be equal, received %s %s", ks1.KeysetId, ks2.KeysetId)
 	}
 
-	if len(ks2.Keys) != 2 {
+	// Since login calls purgeUnusedKeys, we should only expect one key in the
+	// list.
+	if len(ks2.Keys) != 1 {
 		t.Fatalf("Expected two keys in new Keyset found %d", len(ks2.Keys))
 	}
 
+	// The latest key in each keyset should be different since changing the
+	// password added a new key.
 	ksi1, _ := ks1.GetLatestKey()
-	ksi2, err := ks2.GetKey(ks1.Latest)
-	if err != nil {
-		t.Fatalf("Expected no error, received %v", err)
-	}
+	ksi2, _ := ks2.GetLatestKey()
 
-	if !ksi1.Equal(ksi2) {
-		t.Fatalf("Expected Keyset items to be equal, received \n%v\n%v", ksi1, ksi2)
+	if ksi1.Equal(ksi2) {
+		t.Fatalf("Expected Keyset items to be unequal, received \n%v\n%v", ksi1, ksi2)
 	}
 
 	// Metadatas should be equal

@@ -104,7 +104,6 @@ func (k *Keyset) Unused(v VersionToken) error {
 	k.mutex.Unlock()
 
 	return nil
-
 }
 
 // GetNewItemKey derives a new CryptKey for an Item using the latest BaseKey
@@ -214,6 +213,15 @@ func (k *Keyset) GetKey(v VersionToken) (KeysetItem, error) {
 // GetLatestKey returns the most recently generated BaseKey.
 func (k *Keyset) GetLatestKey() (KeysetItem, error) {
 	return k.GetKey(k.Latest)
+}
+
+// PurgeKeys removes any unused keys as long as they are safe to delete.
+func (k *Keyset) PurgeKeys() {
+	for keyId := range k.Keys {
+		kid, _ := parseVersionToken(keyId)
+
+		k.DeleteKey(kid)
+	}
 }
 
 // bytes returns the Keyset as encrypted bytes using the given crypter.
