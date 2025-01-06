@@ -3,6 +3,7 @@ package vault
 type crypter interface {
 	Encrypt(plaintext, additionalData []byte) ([]byte, error)
 	Decrypt(ciphertext, additionalData []byte) ([]byte, error)
+	ChangeKey(key []byte) error
 }
 
 // Deriver is an interface for deriving keys and tokens.

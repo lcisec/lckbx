@@ -7,6 +7,17 @@ import (
 	"testing"
 )
 
+func TestStore(t *testing.T) {
+	t.Run("Test NewStore", testNewStore)
+	t.Run("Test StoreRWD", testStoreRWD)
+	t.Run("Test Store Backup", testStoreBackup)
+	t.Run("Test Store UserId", testStoreUserId)
+	t.Run("Test Store User", testStoreUser)
+	t.Run("Test Store Keyset", testStoreKeyset)
+	t.Run("Test Store Metadata", testStoreMetadata)
+	t.Run("Test Store Item", testStoreItem)
+}
+
 func testNewStore(t *testing.T) {
 	fmt.Println(t.Name())
 

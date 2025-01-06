@@ -15,7 +15,7 @@ var (
 	userEncryptionKey  = []byte{130, 23, 204, 14, 85, 241, 175, 104, 73, 233, 46, 145, 129, 5, 163, 100, 74, 208, 50, 232, 45, 173, 145, 35, 228, 7, 54, 111, 128, 229, 28, 143}
 )
 
-func testUser(t *testing.T) {
+func TestUser(t *testing.T) {
 	t.Run("Test New User", testNewUser)
 	t.Run("Test User Equality", testUserEquality)
 	t.Run("Test User Storage", testUserStorage)
@@ -67,7 +67,9 @@ func testUserStorage(t *testing.T) {
 	fmt.Println(t.Name())
 
 	crypterVersion, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(userEncryptionKey, crypterVersion)
+	crypter := NewCrypter(crypterVersion)
+	crypter.ChangeKey(userEncryptionKey)
+
 	storer, _ := NewStore(userSaveDatabase)
 	aid, _ := parseAuthToken(userTestAuthToken)
 
@@ -95,7 +97,9 @@ func testCreateUser(t *testing.T) {
 	fmt.Println(t.Name())
 
 	crypterVersion, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(userEncryptionKey, crypterVersion)
+	crypter := NewCrypter(crypterVersion)
+	crypter.ChangeKey(userEncryptionKey)
+
 	storer, _ := NewStore(userCreateDatabase)
 	aid, _ := parseAuthToken(userTestAuthToken)
 	aid2, _ := parseAuthToken(userTestAuthToken2)

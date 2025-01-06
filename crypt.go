@@ -5,9 +5,9 @@ const (
 )
 
 // NewCrypter creates a new crypter based on the VersionToken passed to it.
-func NewCrypter(key []byte, version VersionToken) crypter {
+func NewCrypter(version VersionToken) crypter {
 	switch version.String() {
 	default:
-		return newXChaChaCrypter(key)
+		return newXChaChaCrypter()
 	}
 }

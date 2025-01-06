@@ -10,7 +10,7 @@ const (
 	tokenBase32Size = 52
 )
 
-func testTokens(t *testing.T) {
+func TestTokens(t *testing.T) {
 	t.Run("Test ItemToken", testItemToken)
 	t.Run("Test UserToken", testUserToken)
 	t.Run("Test KeysetToken", testKeysetToken)

@@ -12,7 +12,7 @@ var (
 	metadataTestToken     = "mt_6SAQXDCNAPLEOACUIFPQI6HW3R5DF4U3LZHT2GOZCTHPNHLN7B5Q"
 )
 
-func testMetadata(t *testing.T) {
+func TestMetadata(t *testing.T) {
 	t.Run("Test New Metadata", testNewMetadata)
 	t.Run("Test Metadata Equality", testMetadataEquality)
 	t.Run("Test Metadata Items", testMetadataItems)
@@ -155,7 +155,9 @@ func testMetadataStorage(t *testing.T) {
 	fmt.Println(t.Name())
 
 	crypterVersion, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(metadataEncryptionKey, crypterVersion)
+	crypter := NewCrypter(crypterVersion)
+	crypter.ChangeKey(metadataEncryptionKey)
+
 	storer, _ := NewStore(metadataDatabase)
 
 	// Create a new Metadata to work with.

@@ -12,11 +12,10 @@ var (
 	noteData2    = []byte("The quick brown fox jumps over the lazy dog.")
 )
 
-func testNoteItem(t *testing.T) {
+func TestNoteItem(t *testing.T) {
 	t.Run("Test New NoteItem", testNewNoteItem)
 	t.Run("Test NoteItem Equality", testNoteItemEquality)
 	t.Run("Test NoteItem Storage", testNoteItemStorage)
-	// t.Run("Test Create User", testCreateUser)
 }
 
 func testNewNoteItem(t *testing.T) {
@@ -65,7 +64,9 @@ func testNoteItemStorage(t *testing.T) {
 	fmt.Println(t.Name())
 
 	crypterVersion, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(userEncryptionKey, crypterVersion)
+	crypter := NewCrypter(crypterVersion)
+	crypter.ChangeKey(userEncryptionKey)
+
 	storer, _ := NewStore(noteDatabase)
 
 	// Create a new NoteItem to work with.

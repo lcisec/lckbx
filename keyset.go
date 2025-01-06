@@ -99,7 +99,7 @@ func (k *Keyset) Unused(v VersionToken) error {
 	if v.String() == k.Latest.String() {
 		return fmt.Errorf("could not Keyset.Unused: latest key")
 	}
-	
+
 	key, err := k.GetKey(v)
 	if err != nil {
 		return fmt.Errorf("could not Keyset.Unused: %s does not exist", v)

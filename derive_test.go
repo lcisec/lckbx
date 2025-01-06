@@ -13,7 +13,7 @@ var (
 	saltBytes          = []byte{31, 34, 182, 210, 19, 183, 200, 6, 8, 41, 125, 107, 196, 122, 143, 6, 30, 149, 213, 230, 89, 18, 54, 64, 40, 113, 179, 235, 141, 23, 109, 79}
 )
 
-func testDeriver(t *testing.T) {
+func TestDeriver(t *testing.T) {
 	t.Run("Test ArgonBlakeDeriver", testArgonBlakeDeriver)
 
 	// Test NewDeriver after all derivers have been tested.

@@ -13,7 +13,7 @@ var (
 	plaintext           = []byte("The rain in Spain falls mainly in the plain.")
 )
 
-func testCrypter(t *testing.T) {
+func TestCrypter(t *testing.T) {
 	t.Run("Test xChaChaCrypter", testXChaChaCrypter)
 
 	// Test the NewCrypter function after all crypters are tested.
@@ -29,7 +29,9 @@ func testNewCrypter(t *testing.T) {
 		t.Fatal("Expected no error, received", err)
 	}
 
-	c := NewCrypter(cryptKeyBytes, crypterVersion)
+	c := NewCrypter(crypterVersion)
+	c.ChangeKey(cryptKeyBytes)
+
 	encrypted, _ := c.Encrypt(plaintext, goodAssociatedData)
 	decrypted, _ := c.Decrypt(encrypted, goodAssociatedData)
 

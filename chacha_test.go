@@ -17,15 +17,26 @@ func testXChaChaEncrypt(t *testing.T) {
 	fmt.Println(t.Name())
 
 	version, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(cryptKeyBytes, version)
-	_, err := crypter.Encrypt(plaintext, noAssociatedData)
+	crypter := NewCrypter(version)
+
+	_, err := crypter.Encrypt(nil, nil)
 	if err == nil {
-		t.Fatal("Expected error, received nil")
+		t.Fatal("Expected error since no key has been set, received nil")
+	}
+
+	err = crypter.ChangeKey(cryptKeyBytes)
+	if err != nil {
+		t.Fatalf("Expected no error, received %v", err)
+	}
+
+	_, err = crypter.Encrypt(plaintext, noAssociatedData)
+	if err == nil {
+		t.Fatal("Expected error because no associated data, received nil")
 	}
 
 	_, err = crypter.Encrypt(plaintext, shortAssociatedData)
 	if err == nil {
-		t.Fatal("Expected error, received nil")
+		t.Fatal("Expected error because short associated data, received nil")
 	}
 
 	_, err = crypter.Encrypt(plaintext, goodAssociatedData)
@@ -38,10 +49,24 @@ func testXChaChaDecrypt(t *testing.T) {
 	fmt.Println(t.Name())
 
 	version, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(cryptKeyBytes, version)
-	encrypted, _ := crypter.Encrypt(plaintext, goodAssociatedData)
+	crypter := NewCrypter(version)
 
-	_, err := crypter.Decrypt(encrypted, noAssociatedData)
+	_, err := crypter.Decrypt(nil, nil)
+	if err == nil {
+		t.Fatal("Expected error since no key has been set, received nil")
+	}
+
+	err = crypter.ChangeKey(cryptKeyBytes)
+	if err != nil {
+		t.Fatalf("Expected no error, received %v", err)
+	}
+
+	encrypted, err := crypter.Encrypt(plaintext, goodAssociatedData)
+	if err != nil {
+		t.Fatalf("Expected no error, received %v", err)
+	}
+
+	_, err = crypter.Decrypt(encrypted, noAssociatedData)
 	if err == nil {
 		t.Fatal("Expected error, received nil")
 	}
@@ -61,7 +86,9 @@ func testXChaChaRoundTrip(t *testing.T) {
 	fmt.Println(t.Name())
 
 	version, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(cryptKeyBytes, version)
+	crypter := NewCrypter(version)
+	crypter.ChangeKey(cryptKeyBytes)
+
 	encrypted, _ := crypter.Encrypt(plaintext, goodAssociatedData)
 	decrypted, _ := crypter.Decrypt(encrypted, goodAssociatedData)
 

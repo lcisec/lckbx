@@ -14,7 +14,7 @@ var (
 	keyBytesBase32Long    = "D4RLNUQTW7EAMCBJPVV4I6UPAYPJLVPGLEJDMQBIOGZ6XDIXNVHQHQ"
 )
 
-func testKeys(t *testing.T) {
+func TestKeys(t *testing.T) {
 	t.Run("Test BaseKey", testBaseKey)
 	t.Run("Test CryptKey", testCryptKey)
 	t.Run("Test AuthKey", testAuthKey)

@@ -19,7 +19,7 @@ var (
 	keysetMetadataCryptKey = "ck_GPH2E7OFIQUTK7VOGFEWDTUWHKBF7Y3CHGVMO5M6MGVEEGSLKM2Q"
 )
 
-func testKeyset(t *testing.T) {
+func TestKeyset(t *testing.T) {
 	t.Run("Test New Keyset", testNewKeyset)
 	t.Run("Test Keyset Equality", testKeysetEquality)
 	t.Run("Test Keyset Items", testKeysetItems)
@@ -275,7 +275,9 @@ func testKeysetStorage(t *testing.T) {
 	fmt.Println(t.Name())
 
 	crypterVersion, _ := parseVersionToken(xChaChaCrypterVersion)
-	crypter := NewCrypter(keysetEncryptionKey, crypterVersion)
+	crypter := NewCrypter(crypterVersion)
+	crypter.ChangeKey(keysetEncryptionKey)
+
 	storer, _ := NewStore(keysetDatabase)
 
 	// Create a new Keyset to work with.
