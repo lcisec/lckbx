@@ -19,9 +19,9 @@ func (i *ItemMetadata) Equal(i2 ItemMetadata) bool {
 		i.KeyVersion.String() == i2.KeyVersion.String()
 }
 
-func NewItemMetadata(name string, kv VersionToken) ItemMetadata {
+func NewItemMetadata(name string, iid ItemToken, kv VersionToken) ItemMetadata {
 	return ItemMetadata{
-		ItemId:     NewItemToken(),
+		ItemId:     iid,
 		Name:       name,
 		KeyVersion: kv,
 	}

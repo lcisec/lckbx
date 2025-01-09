@@ -256,6 +256,12 @@ func (s *Store) GetItem(iid ItemToken) ([]byte, error) {
 
 }
 
+// DeleteItem takes an ItemToken and removes the encrypted bytes associated
+// with it from the item bucket.
+func (s *Store) DeleteItem(iid ItemToken) error {
+	return s.delete(itemBucket, iid.String())
+}
+
 // Backup creates a backup of the database to the given filename.
 func (s *Store) Backup(filename string) error {
 	err := s.db.View(func(tx *bolt.Tx) error {
