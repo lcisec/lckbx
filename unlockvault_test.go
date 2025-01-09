@@ -5,41 +5,41 @@ import (
 )
 
 var (
-	vaultNote1 = "Original note."
-	vaultNote2 = "Updated note."
+	unlockedVaultUser = "uv_user"
+	vaultNote1        = "Original note."
+	vaultNote2        = "Updated note."
 )
 
 func TestUnlockVault(t *testing.T) {
-	// t.Run("Test Registration", testRegister)
+	// t.Run("Test Key Purge", testPurgeKeys)
 	// t.Run("Test Login", testLogin)
 	// t.Run("Test Password Change", testChangePassword)
 }
 
-// func testRegister(t *testing.T) {
-// 	fmt.Println(t.Name())
-
-// 	store, err := NewStore("register_test.db")
+// func buildVault(path string) Vault {
+// 	store, err := NewStore(path)
 // 	if err != nil {
 // 		t.Fatalf("Expected no error, received %v", err)
 // 	}
 
-// 	// Register a new user with a short password
-// 	err = register(&store, vaultUser, vaultShortPassword)
-// 	if err == nil {
-// 		t.Fatal("Expected error for short password, received nil")
+// 	vault, err := NewVault(&store)
+// 	if err != nil {
+// 		t.Fatalf("Expected no error, received %v", err)
 // 	}
 
 // 	// Register a new user with a good password
-// 	err = register(&store, vaultUser, vaultGoodPassword)
+// 	err = vault.Register(unlockedVaultUser, vaultGoodPassword)
 // 	if err != nil {
 // 		t.Fatalf("Expected no error, received %v", err)
 // 	}
 
-// 	// Register the same user a second time
-// 	err = register(&store, vaultUser, vaultGoodPassword)
-// 	if err == nil {
-// 		t.Fatalf("Expected error for existing user, received nil")
-// 	}
+// }
+
+// func testPurgeKeys(t *testing.T) {
+// 	fmt.Println(t.Name())
+
+// 	vault := buildVault("purge_keys_test.db")
+
 // }
 
 // func testLogin(t *testing.T) {

@@ -148,6 +148,7 @@ func (v *Vault) Login(username, password string) (UnlockedVault, error) {
 
 	uv.derive = v.derive
 	uv.store = v.store
+	uv.crypt = v.crypt
 	uv.user = u
 	uv.keyset = ks
 	uv.metadata = md
