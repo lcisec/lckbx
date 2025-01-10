@@ -58,9 +58,17 @@ func (u *UnlockedVault) purgeUnusedKeys() {
 func (u *UnlockedVault) updateEncryption() error {
 	failed := make(map[string]string)
 
+	// Get a list of map keys for the metadata Items
+	var mapKeys []string
+	for k := range u.metadata.Items {
+		mapKeys = append(mapKeys, k)
+	}
+
 	// 1.  Read through all of the MetadataItems to determine which Items are
 	//     not encrypted using the latest key.
-	for mdi, item := range u.metadata.Items {
+	for _, mk := range mapKeys {
+		item := u.metadata.Items[mk]
+
 		if item.KeyVersion.String() != u.keyset.Latest.String() {
 			// 2.  When an item is found, reencrypt the item with the latest
 			//     key.
@@ -99,7 +107,7 @@ func (u *UnlockedVault) updateEncryption() error {
 			}
 
 			// 2.e Update the item KeyVersion
-			u.metadata.Items[mdi].KeyVersion = u.keyset.Latest
+			u.metadata.Items[mk] = NewItemMetadata(item.Name, item.ItemId, u.keyset.Latest)
 
 			// 2.f Save the reencrypted item to the database.
 			err = note.Save(u.store, u.crypt)

@@ -22,6 +22,8 @@ var (
 // 6. Run reencryption and key purge routines.
 // 7. Verify key purge and ensure we can still read item.
 func TestUnlockedVault(t *testing.T) {
+	fmt.Println(t.Name())
+
 	// 1.  Create a vault and register a user.
 	// 1.a Create a new store for testing
 	store, err := NewStore(unlockedVaultDB)
@@ -161,9 +163,7 @@ func TestUnlockedVault(t *testing.T) {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
-	fmt.Printf("Before Purge:\n%+v\n", uv.keyset)
 	uv.purgeUnusedKeys()
-	fmt.Printf("After Purge:\n%+v", uv.keyset)
 
 	// 7. Verify key purge and ensure we can still read item.
 	// 7.a Ensure we have only one key in our keyset now.
