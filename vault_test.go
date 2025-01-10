@@ -1,4 +1,4 @@
-package vault
+package lckbx
 
 import (
 	"fmt"
@@ -6,13 +6,13 @@ import (
 )
 
 var (
-	vaultUser          = "vault"
-	vaultShortPassword = "0123456789abcd"
-	vaultGoodPassword  = "0123456789abcdef"
-	vaultBadPassword   = "0123456789abcdee"
+	lockedBoxUser          = "lckbx"
+	lockedBoxShortPassword = "0123456789abcd"
+	lockedBoxGoodPassword  = "0123456789abcdef"
+	lockedBoxBadPassword   = "0123456789abcdee"
 )
 
-func TestVault(t *testing.T) {
+func TestLockedBox(t *testing.T) {
 	t.Run("Test Registration", testRegister)
 	t.Run("Test Login", testLogin)
 	t.Run("Test Password Change", testChangePassword)
@@ -26,25 +26,25 @@ func testRegister(t *testing.T) {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
-	vault, err := NewVault(&store)
+	lb, err := NewLockedBox(&store)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Register a new user with a short password
-	err = vault.Register(vaultUser, vaultShortPassword)
+	err = lb.Register(lockedBoxUser, lockedBoxShortPassword)
 	if err == nil {
 		t.Fatal("Expected error for short password, received nil")
 	}
 
 	// Register a new user with a good password
-	err = vault.Register(vaultUser, vaultGoodPassword)
+	err = lb.Register(lockedBoxUser, lockedBoxGoodPassword)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Register the same user a second time
-	err = vault.Register(vaultUser, vaultGoodPassword)
+	err = lb.Register(lockedBoxUser, lockedBoxGoodPassword)
 	if err == nil {
 		t.Fatalf("Expected error for existing user, received nil")
 	}
@@ -58,27 +58,27 @@ func testLogin(t *testing.T) {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
-	vault, err := NewVault(&store)
+	lb, err := NewLockedBox(&store)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Register a user.
-	err = vault.Register(vaultUser, vaultGoodPassword)
+	err = lb.Register(lockedBoxUser, lockedBoxGoodPassword)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Attempt to login with a bad password.
-	_, err = vault.Login(vaultUser, vaultBadPassword)
+	_, err = lb.Login(lockedBoxUser, lockedBoxBadPassword)
 	if err == nil {
 		t.Fatalf("Expected error with bad password, received nil")
 	}
 
 	// Attempt to login with a good password.
-	unlocked, err := vault.Login(vaultUser, vaultGoodPassword)
-	if unlocked.user.UserName != vaultUser {
-		t.Fatal("Expected", vaultUser, ", received", unlocked.user.UserName)
+	unlocked, err := lb.Login(lockedBoxUser, lockedBoxGoodPassword)
+	if unlocked.user.UserName != LockedBoxUser {
+		t.Fatal("Expected", LockedBoxUser, ", received", unlocked.user.UserName)
 	}
 
 	if unlocked.user.KeysetId != unlocked.keyset.KeysetId {
@@ -98,31 +98,31 @@ func testChangePassword(t *testing.T) {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
-	vault, err := NewVault(&store)
+	lb, err := NewLockedBox(&store)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Register a user.
-	err = vault.Register(vaultUser, vaultGoodPassword)
+	err = lb.Register(lockedBoxUser, lockedBoxGoodPassword)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Login with the good password.
-	unlocked1, err := vault.Login(vaultUser, vaultGoodPassword)
+	unlocked1, err := lb.Login(lockedBoxUser, lockedBoxGoodPassword)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Change the password.
-	err = vault.ChangePassword(vaultUser, vaultGoodPassword, vaultBadPassword)
+	err = lb.ChangePassword(lockedBoxUser, lockedBoxGoodPassword, lockedBoxBadPassword)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
 
 	// Login with the updated password.
-	unlocked2, err := vault.Login(vaultUser, vaultBadPassword)
+	unlocked2, err := lb.Login(lockedBoxUser, lockedBoxBadPassword)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}

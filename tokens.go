@@ -1,4 +1,4 @@
-package vault
+package lckbx
 
 // Tokens are always randomly generated and only used as identifiers. There is
 // no need to ever parse a token. All tokens have the form

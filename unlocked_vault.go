@@ -1,10 +1,10 @@
-package vault
+package lckbx
 
 import (
 	"fmt"
 )
 
-type UnlockedVault struct {
+type UnlockedBox struct {
 	derive   deriver
 	store    storer
 	crypt    crypter
@@ -20,7 +20,7 @@ type UnlockedVault struct {
 //  2. Read through all of the Keyset keys and if any of them are not in use,
 //     set Key.Inuse to false.
 //  3. Purge unused keys.
-func (u *UnlockedVault) purgeUnusedKeys() {
+func (u *UnlockedBox) purgeUnusedKeys() {
 	// 1. Read through all MetadataItems to get a list of active keys.
 	inUseKeys := u.metadata.GetInUseKeys()
 
@@ -55,7 +55,7 @@ func (u *UnlockedVault) purgeUnusedKeys() {
 //     encrypted using the latest key.
 //  2. When an item is found, reencrypt the item with the latest key and save
 //     the reencrypted item to the database.
-func (u *UnlockedVault) updateEncryption() error {
+func (u *UnlockedBox) updateEncryption() error {
 	failed := make(map[string]string)
 
 	// Get a list of map keys for the metadata Items
@@ -120,11 +120,11 @@ func (u *UnlockedVault) updateEncryption() error {
 
 	err := u.metadata.Save(u.store, u.crypt)
 	if err != nil {
-		return fmt.Errorf("failed to UnlockedVault.updateEncryption %v", err)
+		return fmt.Errorf("failed to UnlockedBox.updateEncryption %v", err)
 	}
 
 	if len(failed) != 0 {
-		return fmt.Errorf("failed to UnlockedVault.updateEncryption for %+v", failed)
+		return fmt.Errorf("failed to UnlockedBox.updateEncryption for %+v", failed)
 	}
 
 	return nil
@@ -134,24 +134,24 @@ func (u *UnlockedVault) updateEncryption() error {
 //  1. Add Item to database
 //  2. Create ItemMetadata and add it to Metadata
 //  3. Save the Metadata to the database.
-func (u *UnlockedVault) AddNoteItem(n NoteItem) error {
+func (u *UnlockedBox) AddNoteItem(n NoteItem) error {
 	// 1.  Add Item to database
 	// 1.a Derive a new key for encrypting this item.
 	newKey, err := u.keyset.GetNewItemKey(n.ItemId)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.AddNoteItem: %v", err)
 	}
 
 	// 1.b Update the crypter with the new key
 	err = u.crypt.ChangeKey(newKey[:])
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.AddNoteItem: %v", err)
 	}
 
 	// 1.c Save the item to the database
 	err = n.Save(u.store, u.crypt)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.AddNoteItem: %v", err)
 	}
 
 	imd := NewItemMetadata(n.Name, n.ItemId, u.keyset.Latest)
@@ -161,7 +161,7 @@ func (u *UnlockedVault) AddNoteItem(n NoteItem) error {
 	// 3.a Derive the CryptKey used to encrypt the Metadata
 	key, err := u.keyset.GetNewMetadataKey(u.user.MetadataId)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.AddNoteItem: %v", err)
 	}
 
 	// 3.b Update our crypter with the derived CryptKey and save the
@@ -169,7 +169,7 @@ func (u *UnlockedVault) AddNoteItem(n NoteItem) error {
 	u.crypt.ChangeKey(key[:])
 	err = u.metadata.Save(u.store, u.crypt)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.AddNoteItem: %v", err)
 	}
 
 	return nil
@@ -179,30 +179,30 @@ func (u *UnlockedVault) AddNoteItem(n NoteItem) error {
 //  1. Get the ItemMetadata for the NoteItem
 //  2. Generate the encryption key for the NoteItem
 //  3. Save the updated NoteItem
-func (u *UnlockedVault) UpdateNoteItem(n NoteItem) error {
+func (u *UnlockedBox) UpdateNoteItem(n NoteItem) error {
 	// 1.  Get the ItemMetadata for the NoteItem
 	imd, err := u.metadata.GetItem(n.ItemId)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.UpdateNoteItem: %v", err)
 	}
 
 	// 2.  Derive the key for encrypting this item.
 	key, err := u.keyset.GetItemKey(imd.KeyVersion, n.ItemId)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.UpdateNoteItem: %v", err)
 	}
 
 	// 3.  Save the updated NoteItem
 	// 3.a Update the crypter with the new key
 	err = u.crypt.ChangeKey(key[:])
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.UpdateNoteItem: %v", err)
 	}
 
 	// 3.b Save the item to the database
 	err = n.Save(u.store, u.crypt)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.UpdateNoteItem: %v", err)
 	}
 
 	return nil
@@ -212,11 +212,11 @@ func (u *UnlockedVault) UpdateNoteItem(n NoteItem) error {
 //  1. Delete Item from the database.
 //  2. Delete ItemMetadata from Metadata
 //  3. Save the Metadata to the database.
-func (u *UnlockedVault) DeleteItem(iid ItemToken) error {
+func (u *UnlockedBox) DeleteItem(iid ItemToken) error {
 	// 1.  Delete Item from database
 	err := u.store.DeleteItem(iid)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.DeleteNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.DeleteNoteItem: %v", err)
 	}
 
 	// 2.  Delete ItemMetadata from Metadata
@@ -226,7 +226,7 @@ func (u *UnlockedVault) DeleteItem(iid ItemToken) error {
 	// 3.a Derive the CryptKey used to encrypt the Metadata
 	key, err := u.keyset.GetNewMetadataKey(u.user.MetadataId)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.AddNoteItem: %v", err)
 	}
 
 	// 3.b Update our crypter with the derived CryptKey and save the
@@ -234,15 +234,15 @@ func (u *UnlockedVault) DeleteItem(iid ItemToken) error {
 	u.crypt.ChangeKey(key[:])
 	err = u.metadata.Save(u.store, u.crypt)
 	if err != nil {
-		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+		return fmt.Errorf("could not UnlockedBox.AddNoteItem: %v", err)
 	}
 
 	return nil
 }
 
 // Lock will set a random key on the crypter and set the User, Keyset, and
-// Metadata to nil to make this UnlockedVault useless.
-func (u *UnlockedVault) Lock() {
+// Metadata to nil to make this UnlockedBox useless.
+func (u *UnlockedBox) Lock() {
 	key := NewCryptKey()
 	u.crypt.ChangeKey(key[:])
 	u.user = nil

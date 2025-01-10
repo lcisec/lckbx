@@ -1,4 +1,4 @@
-module vault
+module lckbx
 
 go 1.20
 

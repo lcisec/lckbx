@@ -1,4 +1,4 @@
-package vault
+package lckbx
 
 type crypter interface {
 	Encrypt(plaintext, additionalData []byte) ([]byte, error)

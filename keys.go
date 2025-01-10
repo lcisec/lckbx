@@ -1,4 +1,4 @@
-package vault
+package lckbx
 
 // Keys are randomly generated and derived using a deriver. Keys are stored as
 // strings and need to be parsed to get their bytes. All keys take the form of

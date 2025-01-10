@@ -1,4 +1,4 @@
-package vault
+package lckbx
 
 const (
 	minPassphraseLength      = 16

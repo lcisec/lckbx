@@ -1,4 +1,4 @@
-package vault
+package lckbx
 
 const (
 	xChaChaCrypterVersion = "vt_MMO77C3BEUQLI337JSNV6Y4IFE2I2B6T4YD4JUHFT7OVF3I7XJQA"
