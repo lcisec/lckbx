@@ -8,9 +8,9 @@ type UnlockedVault struct {
 	derive   deriver
 	store    storer
 	crypt    crypter
-	user     User
-	keyset   Keyset
-	metadata Metadata
+	user     *User
+	keyset   *Keyset
+	metadata *Metadata
 }
 
 // Purge Keys
@@ -60,7 +60,7 @@ func (u *UnlockedVault) updateEncryption() error {
 
 	// 1.  Read through all of the MetadataItems to determine which Items are
 	//     not encrypted using the latest key.
-	for _, item := range u.metadata.Items {
+	for mdi, item := range u.metadata.Items {
 		if item.KeyVersion.String() != u.keyset.Latest.String() {
 			// 2.  When an item is found, reencrypt the item with the latest
 			//     key.
@@ -79,7 +79,7 @@ func (u *UnlockedVault) updateEncryption() error {
 			}
 
 			// 2.c Load the encrypted item from the database.
-			item, err := NewNoteItemFromStore(u.store, u.crypt, item.ItemId)
+			note, err := NewNoteItemFromStore(u.store, u.crypt, item.ItemId)
 			if err != nil {
 				failed[item.ItemId.String()] = err.Error()
 				break
@@ -98,13 +98,21 @@ func (u *UnlockedVault) updateEncryption() error {
 				break
 			}
 
-			// 2.e. Save the reencrypted item to the database.
-			err = item.Save(u.store, u.crypt)
+			// 2.e Update the item KeyVersion
+			u.metadata.Items[mdi].KeyVersion = u.keyset.Latest
+
+			// 2.f Save the reencrypted item to the database.
+			err = note.Save(u.store, u.crypt)
 			if err != nil {
 				failed[item.ItemId.String()] = err.Error()
 				break
 			}
 		}
+	}
+
+	err := u.metadata.Save(u.store, u.crypt)
+	if err != nil {
+		return fmt.Errorf("failed to UnlockedVault.updateEncryption %v", err)
 	}
 
 	if len(failed) != 0 {
@@ -118,7 +126,7 @@ func (u *UnlockedVault) updateEncryption() error {
 //  1. Add Item to database
 //  2. Create ItemMetadata and add it to Metadata
 //  3. Save the Metadata to the database.
-func (u *UnlockedVault) AddNoteItem(name string, n NoteItem) error {
+func (u *UnlockedVault) AddNoteItem(n NoteItem) error {
 	// 1.  Add Item to database
 	// 1.a Derive a new key for encrypting this item.
 	newKey, err := u.keyset.GetNewItemKey(n.ItemId)
@@ -138,7 +146,7 @@ func (u *UnlockedVault) AddNoteItem(name string, n NoteItem) error {
 		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
 	}
 
-	imd := NewItemMetadata(name, n.ItemId, u.keyset.Latest)
+	imd := NewItemMetadata(n.Name, n.ItemId, u.keyset.Latest)
 	u.metadata.AddItem(imd)
 
 	// 3.  Save the Metadata to the database
@@ -154,6 +162,39 @@ func (u *UnlockedVault) AddNoteItem(name string, n NoteItem) error {
 	err = u.metadata.Save(u.store, u.crypt)
 	if err != nil {
 		return fmt.Errorf("could not UnlockedVault.AddNoteItem: %v", err)
+	}
+
+	return nil
+}
+
+// Update NoteItem
+//  1. Get the ItemMetadata for the NoteItem
+//  2. Generate the encryption key for the NoteItem
+//  3. Save the updated NoteItem
+func (u *UnlockedVault) UpdateNoteItem(n NoteItem) error {
+	// 1.  Get the ItemMetadata for the NoteItem
+	imd, err := u.metadata.GetItem(n.ItemId)
+	if err != nil {
+		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
+	}
+
+	// 2.  Derive the key for encrypting this item.
+	key, err := u.keyset.GetItemKey(imd.KeyVersion, n.ItemId)
+	if err != nil {
+		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
+	}
+
+	// 3.  Save the updated NoteItem
+	// 3.a Update the crypter with the new key
+	err = u.crypt.ChangeKey(key[:])
+	if err != nil {
+		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
+	}
+
+	// 3.b Save the item to the database
+	err = n.Save(u.store, u.crypt)
+	if err != nil {
+		return fmt.Errorf("could not UnlockedVault.UpdateNoteItem: %v", err)
 	}
 
 	return nil
@@ -189,4 +230,14 @@ func (u *UnlockedVault) DeleteItem(iid ItemToken) error {
 	}
 
 	return nil
+}
+
+// Lock will set a random key on the crypter and set the User, Keyset, and
+// Metadata to nil to make this UnlockedVault useless.
+func (u *UnlockedVault) Lock() {
+	key := NewCryptKey()
+	u.crypt.ChangeKey(key[:])
+	u.user = nil
+	u.keyset = nil
+	u.metadata = nil
 }

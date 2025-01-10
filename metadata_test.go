@@ -46,13 +46,13 @@ func testMetadataEquality(t *testing.T) {
 	}
 
 	// Create two identical Metadata objects and ensure they are equal.
-	md1 := Metadata{
+	md1 := &Metadata{
 		MetadataId: mdId,
 		mutex:      &sync.RWMutex{},
 		Items:      make(map[string]ItemMetadata),
 	}
 
-	md2 := Metadata{
+	md2 := &Metadata{
 		MetadataId: mdId,
 		mutex:      &sync.RWMutex{},
 		Items:      make(map[string]ItemMetadata),

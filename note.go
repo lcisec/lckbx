@@ -9,16 +9,14 @@ import (
 // The NoteItem struct holds a note.
 type NoteItem struct {
 	ItemId ItemToken
+	Name   string
 	Data   []byte
 }
 
 func (n *NoteItem) Equal(n2 NoteItem) bool {
 	return n.ItemId.String() == n2.ItemId.String() &&
+		n.Name == n2.Name &&
 		bytes.Equal(n.Data, n2.Data)
-}
-
-func (n *NoteItem) Update(data []byte) {
-	n.Data = data
 }
 
 func (n *NoteItem) bytes(crypt crypter) ([]byte, error) {
@@ -56,6 +54,7 @@ func (n *NoteItem) Save(store storer, crypt crypter) error {
 func NewNoteItem() NoteItem {
 	return NoteItem{
 		ItemId: NewItemToken(),
+		Name:   "",
 		Data:   make([]byte, 1),
 	}
 }

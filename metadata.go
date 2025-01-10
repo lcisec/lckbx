@@ -34,7 +34,7 @@ type Metadata struct {
 }
 
 // Equal determines if two Metadata objects are the same.
-func (m *Metadata) Equal(m2 Metadata) bool {
+func (m *Metadata) Equal(m2 *Metadata) bool {
 	equal := true
 
 	if m.MetadataId.String() != m2.MetadataId.String() {
@@ -131,8 +131,8 @@ func (m *Metadata) Save(store storer, crypt crypter) error {
 }
 
 // NewMetadata creates a new Metadata object.
-func NewMetadata(mid MetadataToken) Metadata {
-	return Metadata{
+func NewMetadata(mid MetadataToken) *Metadata {
+	return &Metadata{
 		MetadataId: mid,
 		mutex:      &sync.RWMutex{},
 		Items:      make(map[string]ItemMetadata),
@@ -158,18 +158,18 @@ func newMetadataFromBytes(crypt crypter, encrypted []byte, ad []byte) (Metadata,
 	return md, nil
 }
 
-func NewMetadataFromStore(store storer, crypt crypter, mid MetadataToken) (Metadata, error) {
+func NewMetadataFromStore(store storer, crypt crypter, mid MetadataToken) (*Metadata, error) {
 	var md Metadata
 
 	bytes, err := store.GetMetadata(mid)
 	if err != nil {
-		return md, fmt.Errorf("could not NewMetadataFromStore: %v", err)
+		return &md, fmt.Errorf("could not NewMetadataFromStore: %v", err)
 	}
 
 	md, err = newMetadataFromBytes(crypt, bytes, []byte(mid.String()))
 	if err != nil {
-		return md, fmt.Errorf("could not NewMetadataFromStore: %v", err)
+		return &md, fmt.Errorf("could not NewMetadataFromStore: %v", err)
 	}
 
-	return md, nil
+	return &md, nil
 }

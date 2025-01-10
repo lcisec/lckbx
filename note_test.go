@@ -8,7 +8,9 @@ import (
 
 var (
 	noteDatabase = "note_test.db"
+	noteName1    = "Spain"
 	noteData1    = []byte("The rain in Spain falls mainly in the plain.")
+	noteName2    = "Fox"
 	noteData2    = []byte("The quick brown fox jumps over the lazy dog.")
 )
 
@@ -23,14 +25,9 @@ func testNewNoteItem(t *testing.T) {
 
 	note := NewNoteItem()
 
-	note.Update(noteData1)
+	note.Data = noteData1
 	if !bytes.Equal(note.Data, noteData1) {
 		t.Fatalf("Expected %s, received %s", noteData1, note.Data)
-	}
-
-	note.Update(noteData2)
-	if !bytes.Equal(note.Data, noteData2) {
-		t.Fatalf("Expected %s, received %s", noteData2, note.Data)
 	}
 }
 
@@ -40,11 +37,13 @@ func testNoteItemEquality(t *testing.T) {
 	// Create two identical NoteItems and ensure they are equal.
 	note1 := NoteItem{
 		ItemId: iid,
+		Name:   noteName1,
 		Data:   noteData1,
 	}
 
 	note2 := NoteItem{
 		ItemId: iid,
+		Name:   noteName1,
 		Data:   noteData1,
 	}
 
@@ -53,7 +52,13 @@ func testNoteItemEquality(t *testing.T) {
 	}
 
 	// Modify one of the objects and ensure they are unequal.
-	note2.Update(noteData2)
+	note2.Name = noteName2
+	if note1.Equal(note2) {
+		t.Fatalf("Expected unequal NoteItems, received \n%+v\n%+v\n", note1, note2)
+	}
+
+	note2.Name = noteName1
+	note2.Data = noteData2
 
 	if note1.Equal(note2) {
 		t.Fatalf("Expected unequal NoteItems, received \n%+v\n%+v\n", note1, note2)
@@ -71,7 +76,8 @@ func testNoteItemStorage(t *testing.T) {
 
 	// Create a new NoteItem to work with.
 	note1 := NewNoteItem()
-	note1.Update(noteData1)
+	note1.Name = noteName1
+	note1.Data = noteData1
 
 	// Save the NoteItem object to the database, retrieve it, verify the
 	// retrieved NoteItem matches the original.

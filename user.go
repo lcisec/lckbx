@@ -14,7 +14,7 @@ type User struct {
 	MetadataId MetadataToken
 }
 
-func (u *User) Equal(u2 User) bool {
+func (u *User) Equal(u2 *User) bool {
 	return u.UserId.String() == u2.UserId.String() &&
 		u.UserName == u2.UserName &&
 		u.KeysetId.String() == u2.KeysetId.String() &&
@@ -80,8 +80,8 @@ func (u *User) Save(store storer, crypt crypter, aid AuthToken) error {
 }
 
 // NewUser takes a username and creates a new User object.
-func NewUser(username string) User {
-	return User{
+func NewUser(username string) *User {
+	return &User{
 		UserId:     NewUserToken(),
 		UserName:   username,
 		KeysetId:   NewKeysetToken(),
@@ -106,18 +106,18 @@ func newUserFromBytes(crypt crypter, encrypted []byte, ad []byte) (User, error) 
 	return user, nil
 }
 
-func NewUserFromStore(store storer, crypt crypter, aid AuthToken, uid UserToken) (User, error) {
+func NewUserFromStore(store storer, crypt crypter, aid AuthToken, uid UserToken) (*User, error) {
 	var user User
 
 	bytes, err := store.GetUser(aid)
 	if err != nil {
-		return user, fmt.Errorf("could not NewUserFromStore: %v", err)
+		return &user, fmt.Errorf("could not NewUserFromStore: %v", err)
 	}
 
 	user, err = newUserFromBytes(crypt, bytes, []byte(uid.String()))
 	if err != nil {
-		return user, fmt.Errorf("could not NewUserFromStore: %v", err)
+		return &user, fmt.Errorf("could not NewUserFromStore: %v", err)
 	}
 
-	return user, nil
+	return &user, nil
 }

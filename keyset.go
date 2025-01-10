@@ -12,7 +12,7 @@ import (
 type KeysetItem struct {
 	BaseKey        BaseKey
 	DeriverVersion VersionToken
-	CrypterVersion VersionToken
+	// CrypterVersion VersionToken
 	InUse          bool
 }
 
@@ -20,7 +20,7 @@ type KeysetItem struct {
 func (k *KeysetItem) Equal(k2 KeysetItem) bool {
 	return k.BaseKey.String() == k2.BaseKey.String() &&
 		k.DeriverVersion.String() == k2.DeriverVersion.String() &&
-		k.CrypterVersion.String() == k2.CrypterVersion.String() &&
+		// k.CrypterVersion.String() == k2.CrypterVersion.String() &&
 		k.InUse == k2.InUse
 }
 
@@ -39,7 +39,7 @@ type Keyset struct {
 }
 
 // Equal determines if two Keyset objects are the same.
-func (k *Keyset) Equal(k2 Keyset) bool {
+func (k *Keyset) Equal(k2 *Keyset) bool {
 	equal := true
 
 	if k.KeysetId.String() != k2.KeysetId.String() {
@@ -266,7 +266,7 @@ func (k *Keyset) Save(store storer, crypt crypter) error {
 }
 
 // NewKeyset creates a new Keyset object with it's first BaseKey.
-func NewKeyset(kid KeysetToken) Keyset {
+func NewKeyset(kid KeysetToken) *Keyset {
 	ks := Keyset{
 		KeysetId: kid,
 		mutex:    &sync.RWMutex{},
@@ -276,7 +276,7 @@ func NewKeyset(kid KeysetToken) Keyset {
 	version, _ := parseVersionToken(argonBlakeDeriverVersion)
 	ks.AddKey(newBaseKey(), version)
 
-	return ks
+	return &ks
 }
 
 // newKeysetFromBytes creates a new Keyset object from encrypted bytes.
@@ -300,18 +300,18 @@ func newKeysetFromBytes(crypt crypter, encrypted []byte, ad []byte) (Keyset, err
 
 // NewKeysetFromStore retrieves the encrypted Keyset bytes from the given
 // storer, decrypts the bytes, and returns a Keyset.
-func NewKeysetFromStore(store storer, crypt crypter, kid KeysetToken) (Keyset, error) {
+func NewKeysetFromStore(store storer, crypt crypter, kid KeysetToken) (*Keyset, error) {
 	var ks Keyset
 
 	bytes, err := store.GetKeyset(kid)
 	if err != nil {
-		return ks, fmt.Errorf("could not NewKeysetFromStore: %v", err)
+		return &ks, fmt.Errorf("could not NewKeysetFromStore: %v", err)
 	}
 
 	ks, err = newKeysetFromBytes(crypt, bytes, []byte(kid.String()))
 	if err != nil {
-		return ks, fmt.Errorf("could not NewNewsetFromStore: %v", err)
+		return &ks, fmt.Errorf("could not NewNewsetFromStore: %v", err)
 	}
 
-	return ks, nil
+	return &ks, nil
 }

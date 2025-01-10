@@ -37,14 +37,14 @@ func testUserEquality(t *testing.T) {
 	mid := NewMetadataToken()
 
 	// Create two identical Metadata objects and ensure they are equal.
-	user1 := User{
+	user1 := &User{
 		UserId:     uid,
 		UserName:   username1,
 		KeysetId:   kid,
 		MetadataId: mid,
 	}
 
-	user2 := User{
+	user2 := &User{
 		UserId:     uid,
 		UserName:   username1,
 		KeysetId:   kid,

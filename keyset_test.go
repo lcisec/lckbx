@@ -72,7 +72,7 @@ func testKeysetEquality(t *testing.T) {
 	}
 
 	// Create two identical Keysets and ensure they are equal.
-	ks1 := Keyset{
+	ks1 := &Keyset{
 		KeysetId: ksid,
 		mutex:    &sync.RWMutex{},
 		Keys:     make(map[string]KeysetItem),
@@ -81,7 +81,7 @@ func testKeysetEquality(t *testing.T) {
 
 	ks1.Keys[kid.String()] = ksItem
 
-	ks2 := Keyset{
+	ks2 := &Keyset{
 		KeysetId: ksid,
 		mutex:    &sync.RWMutex{},
 		Keys:     make(map[string]KeysetItem),
