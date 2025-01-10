@@ -3,7 +3,7 @@
 ## Overview
 Vault is a multi-user, offline, privacy-preserving encrypted note storage system. The only plaintext data stored is the username and the identifiers used to lookup the users encrypted Keyset and Metadata. Each user has a BaseKey that is derived from their password using Argon2. This BaseKey is then used to derive the encryption keys and identifiers used to lookup the Keyset and Metadata. Since the Keyset and Metadata IDs are derived from the BaseKey it is not possible to determine which Keyset or Metadata belongs to which user, when there is more than one user.
 
-Vault is released under the [Polyform Strict License 1.0.0]<https://polyformproject.org/licenses/strict/1.0.0>, which means source code is available but it is not open source. I will not be accepting Pull Requests for this code. If you would like to see improvements to the code and new features, please open an Issue and consider sponsoring me on Github.
+Vault is released under the [Polyform Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0), which means source code is available but it is not open source. I will not be accepting Pull Requests for this code. If you would like to see improvements to the code and new features, please open an Issue and consider sponsoring me on Github.
 
 ### Threat Model
 While vault can be used to store passwords as notes, it is not a password manager and should not be treated as one when considering potential threats. In addition, Vault is not able to keep your UnlockedVault safe on a machine that has been compromised.
