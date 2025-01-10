@@ -182,7 +182,7 @@ func (l *LockedBox) ChangePassword(username, oldPassword, newPassword string) er
 		return fmt.Errorf("could not LockedBox.ChangePassword: %v", err)
 	}
 
-	at, err := l.derive.DeriveAuthToken(baseKey, uv.user.UserId)
+	at, err := l.derive.DeriveAuthToken(baseKey, ub.user.UserId)
 	if err != nil {
 		return fmt.Errorf("could not LockedBox.ChangePassword: %v", err)
 	}

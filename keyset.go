@@ -12,7 +12,6 @@ import (
 type KeysetItem struct {
 	BaseKey        BaseKey
 	DeriverVersion VersionToken
-	// CrypterVersion VersionToken
 	InUse          bool
 }
 

@@ -77,8 +77,8 @@ func testLogin(t *testing.T) {
 
 	// Attempt to login with a good password.
 	unlocked, err := lb.Login(lockedBoxUser, lockedBoxGoodPassword)
-	if unlocked.user.UserName != LockedBoxUser {
-		t.Fatal("Expected", LockedBoxUser, ", received", unlocked.user.UserName)
+	if unlocked.user.UserName != lockedBoxUser {
+		t.Fatal("Expected", lockedBoxUser, ", received", unlocked.user.UserName)
 	}
 
 	if unlocked.user.KeysetId != unlocked.keyset.KeysetId {

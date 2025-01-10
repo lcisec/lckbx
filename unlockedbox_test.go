@@ -6,11 +6,11 @@ import (
 )
 
 var (
-	unlockedBoxDB   = "unlocked_test.db"
-	unlockedBoxUser = "ub_user"
-	boxNoteName     = "A Note"
-	boxNoteData1    = []byte("Original note.")
-	boxNoteData2    = []byte("Updated note.")
+	unlockedBoxDB        = "unlocked_test.db"
+	unlockedBoxUser      = "ub_user"
+	unlockedBoxNoteName  = "A Note"
+	unlockedBoxNoteData1 = []byte("Original note.")
+	unlockedBoxNoteData2 = []byte("Updated note.")
 )
 
 // End-to-end test for an UnlockedBox
@@ -45,7 +45,7 @@ func TestUnlockedBox(t *testing.T) {
 
 	// 2.  Login as the user, add an item, lock the UnlockedBox
 	// 2.a Login as the user
-	ub, err := lb.Login(unlockedBoxUser, lockBoxGoodPassword)
+	ub, err := lb.Login(unlockedBoxUser, lockedBoxGoodPassword)
 	if err != nil {
 		t.Fatalf("Expected no error, received %v", err)
 	}
