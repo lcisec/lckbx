@@ -240,6 +240,10 @@ func (u *UnlockedBox) DeleteItem(iid ItemToken) error {
 	return nil
 }
 
+func (u *UnlockedBox) GetUserName() string {
+	return u.user.UserName
+}
+
 // Lock will set a random key on the crypter and set the User, Keyset, and
 // Metadata to nil to make this UnlockedBox useless.
 func (u *UnlockedBox) Lock() {
