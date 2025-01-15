@@ -1,146 +1,67 @@
 package main
 
 import (
-	"fmt"
-	//"time"
-	"log"
-"os"
 	"lckbx"
+	"log"
+	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	// "fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/widget"
 )
 
 var (
+	content *fyne.Container
+	center  *fyne.Container
+	w       fyne.Window
+	lb      *lckbx.LockedBox
+	ub      *lckbx.UnlockedBox
 )
 
-func buildUnlockedUI(uv *lckbx.UnlockedBox) *fyne.Container {
-	user := widget.NewLabel(uv.GetUserName())
-	content := container.NewVBox(user)
+func setupLogging() {
+	path := getLogPath()
 
-	return content
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Fatalf("Could not initialize logs: %s", err)
+	}
+
+	log.SetOutput(file)
 }
-
-func buildLoginUI(lv *lckbx.LockedBox, w fyne.Window) fyne.CanvasObject {
-	username := widget.NewEntry()
-	username.SetPlaceHolder("Enter username...")
-
-	password := widget.NewPasswordEntry()
-	password.SetPlaceHolder("Enter password...")
-
-	content := container.NewVBox(username, password, widget.NewButton("Unlock", func() {
-		uv, err := lv.Login(username.Text, password.Text)
-		if err != nil {
-			log.Printf("Could not Login: %v", err)
-			w.SetContent(buildLoginUI(lv, w))
-		} else {
-			w.SetContent(buildUnlockedUI(&uv))
-		}
-	}))
-
-	return content
-}
-
-func buildRegisterUI(lv *lckbx.LockedBox, w fyne.Window) fyne.CanvasObject {
-	username := widget.NewEntry()
-	username.SetPlaceHolder("Enter username...")
-
-	password := widget.NewPasswordEntry()
-	password.SetPlaceHolder("Enter password...")
-
-	content := container.NewVBox(username, password, widget.NewButton("Register", func() {
-		err := lv.Register(username.Text, password.Text)
-		if err != nil {
-			log.Printf("Could not Register: %v", err)
-			w.SetContent(buildRegisterUI(lv, w))
-		} else {
-			w.SetContent(buildLoginUI(lv, w))
-		}
-	}))
-
-	return content
-}
-
-func buildChangePasswordUI(lv *lckbx.LockedBox, w fyne.Window) fyne.CanvasObject {
-	username := widget.NewEntry()
-	username.SetPlaceHolder("Enter username...")
-
-	oldPwd := widget.NewPasswordEntry()
-	oldPwd.SetPlaceHolder("Enter old password...")
-
-	newPwd := widget.NewPasswordEntry()
-	newPwd.SetPlaceHolder("Enter new password...")
-
-	content := container.NewVBox(username, oldPwd, newPwd, widget.NewButton("Change Password", func() {
-		err := lv.ChangePassword(username.Text, oldPwd.Text, newPwd.Text)
-		if err != nil {
-			log.Printf("Could not Change Password: %v", err)
-			w.SetContent(buildChangePasswordUI(lv, w))
-		} else {
-			w.SetContent(buildLoginUI(lv, w))
-		}
-	}))
-
-	return content
-}
-
 
 // Build our user interface and run the application.
 func main() {
-	// Get the path for our lckbx data store
-	dirname, err := os.UserHomeDir()
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Get a new storer
-    path := fmt.Sprintf("%s/%s", dirname, "lckbx.db")
-    store, err := lckbx.NewStore(path)
-    if err != nil {
-    	log.Fatal(err)
-    }
+	width := float32(800.0)
+	height := float32(450.0)
+	pad := float32(width / 4)
 
-    // Get a LockedBox
-    lv, err := lckbx.NewLockedBox(&store)
-    if err != nil {
-    	log.Fatal(err)
-    }
+	// Initialize the program
+	createLckbxDir()
+	setupLogging()
 
-    // Create an application and the needed windows.
+	// Get a LockedBox
+	lb = getLockedBox()
+
+	// Create an application and the needed windows.
 	a := app.New()
-	w := a.NewWindow("LckBx")
-	w.Resize(fyne.NewSize(800.0, 450.0))
+	w = a.NewWindow("LckBx")
+	w.Resize(fyne.NewSize(width, height))
 
-	// Define our buttons
-	loginButton := widget.NewButton("Login", func(){
-		w.SetTitle("LckBx - Login")
-		w.SetContent(buildLoginUI(&lv, w))
-	})
+	center = container.New(
+		layout.NewCustomPaddedLayout(0.0, 0.0, pad, pad),
+		buildDefaultScreen(),
+	)
 
-	registerButton := widget.NewButton("Register", func() {
-		w.SetTitle("LckBx - Register")
-		w.SetContent(buildRegisterUI(&lv, w))
-	})
-
-	changePasswordButton := widget.NewButton("Change Password", func() {
-		w.SetTitle("LckBx - Change Password")
-		w.SetContent(buildChangePasswordUI(&lv, w))
-	})
-
-
-	// Build the content for this window.
-	content := container.New(layout.NewVBoxLayout(),
-		loginButton,
-		registerButton,
-		changePasswordButton,
+	content = container.NewBorder(
+		buildTopBar(),
+		nil,
+		nil,
+		nil,
+		center,
 	)
 
 	w.SetContent(content)
-
 
 	// Run the application
 	w.ShowAndRun()
