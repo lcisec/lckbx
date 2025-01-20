@@ -1,8 +1,10 @@
 package main
 
 import (
-	"image/color"
 	"log"
+//"time"
+
+	"lckbx"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -10,10 +12,144 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	//"fyne.io/fyne/v2/data/binding"
 )
 
+var (
+	lb *lckbx.LockedBox
+	il *ItemList
+)
+
+const (
+	width  = float32(800.0)
+	height = float32(450.0)
+)
+
+func getPadding() float32 {
+	if center == nil {
+		return width / 4
+	} else {
+		return center.Size().Width / 4
+	}
+}
+
+//------------
+// ACTIONS
+//------------
+
+// loginShowAction locks the current UnlockedBox and displays the login
+// screen.
+func loginShowAction() {
+	if il != nil {
+		il.Close()
+	}
+
+	w.SetTitle("LckBx - Login")
+	center.Objects[0] = buildLoginScreen()
+	center.Refresh()
+}
+
+// registerShowAction displays the registration screen.
+func registerShowAction() {
+	w.SetTitle("LckBx - Register")
+	center.Objects[0] = buildRegisterScreen()
+	center.Refresh()
+}
+
+// logoutShowAction locks the current UnlockedBox and displays the login
+// screen.
+func logoutShowAction() {
+	if il != nil {
+		il.Close()
+	}
+
+	w.SetTitle("LckBx - Login")
+	center.Objects[0] = buildLoginScreen()
+	center.Refresh()
+}
+
+// passwordShowAction locks the current UnlockedBox and displayes the change
+// password screen.
+func passwordShowAction() {
+	if il != nil {
+		il.Close()
+	}
+
+	w.SetTitle("LckBx - Change Password")
+	center.Objects[0] = buildChangePasswordScreen()
+	center.Refresh()
+}
+
+// homeShowAction displays the home screen
+func homeShowAction() {
+	w.SetTitle("LckBx")
+	center.Objects[0] = buildDefaultScreen()
+	center.Refresh()
+}
+
+// ------------
+// SCREENS
+// ------------
 func buildUnlockedScreen() fyne.CanvasObject {
-	return container.NewHSplit(layout.NewSpacer(), widget.NewLabel(ub.GetUserName()))
+	name := widget.NewEntry()
+	data := widget.NewMultiLineEntry()
+
+	// time.Sleep(time.Millisecond * 100)
+
+	list := widget.NewList(
+		func() int {
+			return il.Length()
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("")
+		},
+		func(i widget.ListItemID, o fyne.CanvasObject) {
+			o.(*widget.Label).SetText(il.items[i].Name)
+		},
+	)
+
+	list.OnSelected = func(i widget.ListItemID) {
+		il.loadItem(i)
+
+		name.SetText(il.current.Name)
+		data.SetText(string(il.current.Data))
+	}
+
+	itemUi := container.NewBorder(name, nil, nil, nil, data)
+	itemListUi := container.NewVScroll(list)
+
+	itemsToolbar := widget.NewToolbar(
+		widget.NewToolbarAction(theme.ContentAddIcon(), func() {
+			il.AddItem()
+			list.Refresh()
+		}),
+		widget.NewToolbarAction(theme.DeleteIcon(), func() {
+			if il.current == nil {
+				name.SetText("")
+				data.SetText("")
+				itemUi.Refresh()
+			}
+
+			il.DeleteItem()
+			list.Refresh()
+		}),
+		widget.NewToolbarAction(theme.DocumentSaveIcon(), func() {
+			if il.current == nil {
+				il.AddItem()
+			}
+
+			il.current.Name = name.Text
+			il.current.Data = []byte(data.Text)
+
+			il.SaveItem()
+			list.Refresh()
+		}),
+	)
+
+	left := container.NewBorder(itemsToolbar, nil, nil, nil, itemListUi)
+	screen := container.NewBorder(nil, nil, left, nil, itemUi)
+
+	return screen
 }
 
 func buildLoginScreen() fyne.CanvasObject {
@@ -29,28 +165,29 @@ func buildLoginScreen() fyne.CanvasObject {
 		widget.NewLabel("Password"), password,
 	)
 
-	content := container.NewVBox(
-		layout.NewSpacer(),
-		form,
-		widget.NewButton("Unlock", func() {
-			unlocked, err := lb.Login(username.Text, password.Text)
-			if err != nil {
-				log.Printf("Could not Login: %v", err)
-				center.Objects[0] = buildLoginScreen()
-				center.Refresh()
-			} else {
-				ub = &unlocked
-				// go ub.purgeUnusedKeys()
-				// go ub.updateEncryption()
-
-				center.Objects[0] = buildUnlockedScreen()
-				center.Refresh()
-			}
-		}),
-		layout.NewSpacer(),
+	screen := container.New(
+		layout.NewCustomPaddedLayout(0.0, 0.0, getPadding(), getPadding()),
+		container.NewVBox(
+			layout.NewSpacer(),
+			form,
+			widget.NewButton("Unlock", func() {
+				unlocked, err := lb.Login(username.Text, password.Text)
+				if err != nil {
+					log.Printf("Could not Login: %v", err)
+					center.Objects[0] = buildLoginScreen()
+					center.Refresh()
+				} else {
+					il = NewItemList(&unlocked)
+					log.Printf("Successfully logged in as %s", username.Text)
+					center.Objects[0] = buildUnlockedScreen()
+					center.Refresh()
+				}
+			}),
+			layout.NewSpacer(),
+		),
 	)
 
-	return content
+	return screen
 }
 
 func buildRegisterScreen() fyne.CanvasObject {
@@ -66,24 +203,28 @@ func buildRegisterScreen() fyne.CanvasObject {
 		widget.NewLabel("Password"), password,
 	)
 
-	content := container.NewVBox(
-		layout.NewSpacer(),
-		form,
-		widget.NewButton("Register", func() {
-			err := lb.Register(username.Text, password.Text)
-			if err != nil {
-				log.Printf("Could not Register: %v", err)
-				center.Objects[0] = buildRegisterScreen()
-				center.Refresh()
-			} else {
-				center.Objects[0] = buildLoginScreen()
-				center.Refresh()
-			}
-		}),
-		layout.NewSpacer(),
+	screen := container.New(
+		layout.NewCustomPaddedLayout(0.0, 0.0, getPadding(), getPadding()),
+		container.NewVBox(
+			layout.NewSpacer(),
+			form,
+			widget.NewButton("Register", func() {
+				err := lb.Register(username.Text, password.Text)
+				if err != nil {
+					log.Printf("Could not Register: %v", err)
+					center.Objects[0] = buildRegisterScreen()
+					center.Refresh()
+				} else {
+					log.Printf("Successfully registered user: %s", username.Text)
+					center.Objects[0] = buildLoginScreen()
+					center.Refresh()
+				}
+			}),
+			layout.NewSpacer(),
+		),
 	)
 
-	return content
+	return screen
 }
 
 func buildChangePasswordScreen() fyne.CanvasObject {
@@ -103,77 +244,63 @@ func buildChangePasswordScreen() fyne.CanvasObject {
 		widget.NewLabel("New Password"), newPwd,
 	)
 
-	content := container.NewVBox(
-		layout.NewSpacer(),
-		form,
-		widget.NewButton("Change Password", func() {
-			err := lb.ChangePassword(username.Text, oldPwd.Text, newPwd.Text)
-			if err != nil {
-				log.Printf("Could not Change Password: %v", err)
-				center.Objects[0] = buildChangePasswordScreen()
-				center.Refresh()
-			} else {
-				center.Objects[0] = buildLoginScreen()
-				center.Refresh()
-			}
-		}),
-		layout.NewSpacer(),
+	screen := container.New(
+		layout.NewCustomPaddedLayout(0.0, 0.0, getPadding(), getPadding()),
+		container.NewVBox(
+			layout.NewSpacer(),
+			form,
+			widget.NewButton("Change Password", func() {
+				err := lb.ChangePassword(username.Text, oldPwd.Text, newPwd.Text)
+				if err != nil {
+					log.Printf("Could not Change Password: %v", err)
+					center.Objects[0] = buildChangePasswordScreen()
+					center.Refresh()
+				} else {
+					log.Printf("Password successfully changed for %s", username.Text)
+					center.Objects[0] = buildLoginScreen()
+					center.Refresh()
+				}
+			}),
+			layout.NewSpacer(),
+		),
 	)
 
-	return content
+	return screen
 }
 
 func buildDefaultScreen() fyne.CanvasObject {
-	return canvas.NewText("Welcome to LckBx", color.Black)
+	title := canvas.NewText("Welcome to LckBx", black)
+	title.TextSize = 36.0
+	title.Alignment = fyne.TextAlignCenter
+
+	screen := container.New(
+		layout.NewCustomPaddedLayout(0.0, 0.0, getPadding(), getPadding()),
+		container.NewVBox(
+			layout.NewSpacer(),
+			title,
+			widget.NewButtonWithIcon("Unlock", theme.LoginIcon(), loginShowAction),
+			widget.NewButtonWithIcon("Add User", theme.AccountIcon(), registerShowAction),
+			widget.NewButtonWithIcon("Lock", theme.LogoutIcon(), logoutShowAction),
+			widget.NewButtonWithIcon("Change Password", theme.ViewRefreshIcon(), passwordShowAction),
+			layout.NewSpacer(),
+		),
+	)
+
+	return screen
 }
 
-func buildTopBar() fyne.CanvasObject {
-	register := widget.NewButtonWithIcon(
-		"Add User",
-		theme.AccountIcon(),
-		func() {
-			w.SetTitle("LckBx - Register")
-			center.Objects[0] = buildRegisterScreen()
-			center.Refresh()
-		},
+// ------------
+// COMPONENTS
+// ------------
+func buildToolBar() fyne.CanvasObject {
+	toolbar := widget.NewToolbar(
+		widget.NewToolbarAction(theme.HomeIcon(), homeShowAction),
+		widget.NewToolbarAction(theme.AccountIcon(), registerShowAction),
+		widget.NewToolbarAction(theme.LoginIcon(), loginShowAction),
+		widget.NewToolbarAction(theme.LogoutIcon(), logoutShowAction),
+		widget.NewToolbarAction(theme.ViewRefreshIcon(), passwordShowAction),
+		//		widget.NewToolbarAction(theme.ColorPalatteIcon(), themeAction)
 	)
 
-	login := widget.NewButtonWithIcon(
-		"Unlock",
-		theme.LoginIcon(),
-		func() {
-			if ub != nil {
-				ub.Lock()
-			}
-			w.SetTitle("LckBx - Login")
-			center.Objects[0] = buildLoginScreen()
-			center.Refresh()
-		},
-	)
-
-	logout := widget.NewButtonWithIcon(
-		"Lock",
-		theme.LogoutIcon(),
-		func() {
-			if ub != nil {
-				ub.Lock()
-			}
-			center.Objects[0] = buildLoginScreen()
-			center.Refresh()
-		},
-	)
-
-	password := widget.NewButtonWithIcon(
-		"Change Password",
-		theme.ViewRefreshIcon(),
-		func() {
-			if ub != nil {
-				ub.Lock()
-			}
-			center.Objects[0] = buildChangePasswordScreen()
-			center.Refresh()
-		},
-	)
-
-	return container.NewHBox(register, login, logout, password)
+	return toolbar
 }

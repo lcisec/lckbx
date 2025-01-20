@@ -1,7 +1,6 @@
 package main
 
 import (
-	"lckbx"
 	"log"
 	"os"
 
@@ -15,8 +14,6 @@ var (
 	content *fyne.Container
 	center  *fyne.Container
 	w       fyne.Window
-	lb      *lckbx.LockedBox
-	ub      *lckbx.UnlockedBox
 )
 
 func setupLogging() {
@@ -32,10 +29,6 @@ func setupLogging() {
 
 // Build our user interface and run the application.
 func main() {
-	width := float32(800.0)
-	height := float32(450.0)
-	pad := float32(width / 4)
-
 	// Initialize the program
 	createLckbxDir()
 	setupLogging()
@@ -45,16 +38,21 @@ func main() {
 
 	// Create an application and the needed windows.
 	a := app.New()
+	a.Settings().SetTheme(&lckbxTheme{})
+	// How can we use these to create a crude idle timer.
+	// a.LifeCycle().SetOnExitedForeground(func() {})
+	// a.LifeCycle().SetOnEnteredForeground(func() {})
+
 	w = a.NewWindow("LckBx")
 	w.Resize(fyne.NewSize(width, height))
 
 	center = container.New(
-		layout.NewCustomPaddedLayout(0.0, 0.0, pad, pad),
+		layout.NewStackLayout(),
 		buildDefaultScreen(),
 	)
 
 	content = container.NewBorder(
-		buildTopBar(),
+		buildToolBar(),
 		nil,
 		nil,
 		nil,

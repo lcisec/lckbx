@@ -8,7 +8,8 @@ import (
 var (
 	unlockedBoxDB        = "unlocked_test.db"
 	unlockedBoxUser      = "ub_user"
-	unlockedBoxNoteName  = "A Note"
+	unlockedBoxNoteName1 = "A Note"
+	unlockedBoxNoteName2 = "A New Note"
 	unlockedBoxNoteData1 = []byte("Original note.")
 	unlockedBoxNoteData2 = []byte("Updated note.")
 )
@@ -53,7 +54,7 @@ func TestUnlockedBox(t *testing.T) {
 	// 2.b Create a new NoteItem and add data to it.
 	n := NewNoteItem()
 	iid := n.ItemId
-	n.Name = unlockedBoxNoteName
+	n.Name = unlockedBoxNoteName1
 	n.Data = unlockedBoxNoteData1
 
 	// 2.c Add the NoteItem to the database.
@@ -88,10 +89,20 @@ func TestUnlockedBox(t *testing.T) {
 	}
 
 	// 3.d Update and save the NoteItem
+	n2.Name = unlockedBoxNoteName2
 	n2.Data = unlockedBoxNoteData2
 	err = ub.UpdateNoteItem(n2)
 	if err != nil {
 		t.Fatalf("Expected no error, received: %v", err)
+	}
+
+	mdi, err := ub.metadata.GetItem(n2.ItemId)
+	if err != nil {
+		t.Fatalf("Expected no error, received: %v", err)
+	}
+
+	if mdi.Name != n2.Name {
+		t.Fatalf("Expected, %s, received %s.", n2.Name, mdi.Name)
 	}
 
 	// 3.e Lock the UnlockedBox

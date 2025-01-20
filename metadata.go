@@ -88,6 +88,16 @@ func (m *Metadata) GetItem(iid ItemToken) (ItemMetadata, error) {
 	return item, nil
 }
 
+func (m *Metadata) GetItems() []ItemMetadata {
+	var items []ItemMetadata
+
+	for _, val := range m.Items {
+		items = append(items, val)
+	}
+
+	return items
+}
+
 func (m *Metadata) GetInUseKeys() []string {
 	var keys []string
 

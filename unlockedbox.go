@@ -179,6 +179,8 @@ func (u *UnlockedBox) AddNoteItem(n NoteItem) error {
 //  1. Get the ItemMetadata for the NoteItem
 //  2. Generate the encryption key for the NoteItem
 //  3. Save the updated NoteItem
+//  4. Update the ItemMetadata Name to match the NoteItem name
+//  5. Save the Metadata.
 func (u *UnlockedBox) UpdateNoteItem(n NoteItem) error {
 	// 1.  Get the ItemMetadata for the NoteItem
 	imd, err := u.metadata.GetItem(n.ItemId)
@@ -201,6 +203,25 @@ func (u *UnlockedBox) UpdateNoteItem(n NoteItem) error {
 
 	// 3.b Save the item to the database
 	err = n.Save(u.store, u.crypt)
+	if err != nil {
+		return fmt.Errorf("could not UnlockedBox.UpdateNoteItem: %v", err)
+	}
+
+	// 4.  Update the ItemMetadata Name to match the NoteItem Name
+	imd.Name = n.Name
+	u.metadata.AddItem(imd)
+
+	// 5.  Save the Metadata
+	// 5.a Derive the CryptKey used to encrypt the Metadata
+	key, err = u.keyset.GetNewMetadataKey(u.user.MetadataId)
+	if err != nil {
+		return fmt.Errorf("could not UnlockedBox.UpdateNoteItem: %v", err)
+	}
+
+	// 5.b Update our crypter with the derived CryptKey and save the
+	//     encrypted Metadata to the database.
+	u.crypt.ChangeKey(key[:])
+	err = u.metadata.Save(u.store, u.crypt)
 	if err != nil {
 		return fmt.Errorf("could not UnlockedBox.UpdateNoteItem: %v", err)
 	}
@@ -240,8 +261,33 @@ func (u *UnlockedBox) DeleteItem(iid ItemToken) error {
 	return nil
 }
 
+// GetUserName returns the username associated with the unlocked box.
 func (u *UnlockedBox) GetUserName() string {
 	return u.user.UserName
+}
+
+// GetItemList returns a mapping of item Names and ItemIds.
+func (u *UnlockedBox) GetItemList() []ItemMetadata {
+	return u.metadata.GetItems()
+}
+
+// GetItem returns the NoteItem associated with the given ItemId.
+func (u *UnlockedBox) GetItem(iid ItemToken) (NoteItem, error) {
+	var ni NoteItem
+
+	key, err := u.keyset.GetNewItemKey(iid)
+	if err != nil {
+		return ni, fmt.Errorf("could not UnlockedBox.GetItem: %v", err)
+	}
+
+	u.crypt.ChangeKey(key[:])
+
+	ni, err = NewNoteItemFromStore(u.store, u.crypt, iid)
+	if err != nil {
+		return ni, fmt.Errorf("could not UnlockedBox.GetItem %s: %v", iid, err)
+	}
+
+	return ni, nil
 }
 
 // Lock will set a random key on the crypter and set the User, Keyset, and
