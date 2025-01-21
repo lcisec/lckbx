@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="161.49669mm"
+   height="54.284462mm"
+   viewBox="0 0 161.49669 54.284462"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="lckbx-logo.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.914906"
+     inkscape:cx="42.080826"
+     inkscape:cy="320.25148"
+     inkscape:window-width="2560"
+     inkscape:window-height="1279"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer2" />
+  <defs
+     id="defs2">
+    <rect
+       x="99.87365"
+       y="601.68408"
+       width="598.38373"
+       height="370.19257"
+       id="rect4184" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Text"
+     transform="translate(-21.986637,-63.880255)">
+    <g
+       id="g5700"
+       transform="translate(-2.469427,-94.130808)">
+      <rect
+         style="fill:#f79824;fill-opacity:1;stroke-width:0.422676"
+         id="rect2457"
+         width="161.49669"
+         height="54.284462"
+         x="24.456064"
+         y="158.01106" />
+      <text
+         xml:space="preserve"
+         id="text4182"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;font-family:Nunito;-inkscape-font-specification:'Nunito, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect4184);display:inline;opacity:0.5;fill:#f4f7f5;fill-opacity:1;image-rendering:auto"
+         transform="scale(0.26458333)"><tspan
+           x="99.873047"
+           y="615.54283"
+           id="tspan717">01011001011011110111010100100000011100110110100001100001011011</tspan><tspan
+           x="99.873047"
+           y="635.54283"
+           id="tspan719">00011011000010000001110010011001010110110101100101011011010110</tspan><tspan
+           x="99.873047"
+           y="655.54283"
+           id="tspan721">00100110010101110010001000000111010001101000011001010010000001</tspan><tspan
+           x="99.873047"
+           y="675.54283"
+           id="tspan723">00110001101111011100100110010000100000011110010110111101110101</tspan><tspan
+           x="99.873047"
+           y="695.54283"
+           id="tspan725">01110010001000000100011101101111011001000010110000100000011001</tspan><tspan
+           x="99.873047"
+           y="715.54283"
+           id="tspan727">10011011110111001000100000011010010111010000100000011010010111</tspan><tspan
+           x="99.873047"
+           y="735.54283"
+           id="tspan729">00110010000001101000011001010010000001110111011010000110111100</tspan><tspan
+           x="99.873047"
+           y="755.54283"
+           id="tspan731">10000001100111011010010111011001100101011100110010000001111001</tspan><tspan
+           x="99.873047"
+           y="775.54283"
+           id="tspan733">01101111011101010010000001110000011011110111011101100101011100</tspan><tspan
+           x="99.873047"
+           y="795.54283"
+           id="tspan735">10001000000111010001101111001000000110011101100101011101000010</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:50.8px;font-family:Poppins;-inkscape-font-specification:'Poppins, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;opacity:1;fill:#08090a;fill-opacity:1;stroke-width:0.264583"
+         x="29.950552"
+         y="201.87057"
+         id="text114"><tspan
+           sodipodi:role="line"
+           id="tspan112"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:50.8px;font-family:Poppins;-inkscape-font-specification:'Poppins, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#08090a;fill-opacity:1;stroke-width:0.264583"
+           x="29.950552"
+           y="201.87057">LckBx</tspan></text>
+    </g>
+  </g>
+</svg>
