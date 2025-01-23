@@ -1,5 +1,5 @@
 name: Basic QA
-on: pull_request
+on: push
 
 jobs:
   basic-qa:
