@@ -15,8 +15,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        go get .
+        sudo apt update && sudo apt upgrade
         sudo apt install gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
+        go get .
 
     - name: Lint
       run: |
