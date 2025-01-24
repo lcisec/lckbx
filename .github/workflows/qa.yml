@@ -16,10 +16,12 @@ jobs:
     - name: Install dependencies
       run: |
         go get .
-        apt install gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
+        sudo apt install gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
 
     - name: Lint
-      run: go fmt && go fmt ./src
+      run: |
+        test -z "$(go fmt)"
+        test -z "$(go fmt ./src)"
 
     - name: Test
       run: go test -v 
