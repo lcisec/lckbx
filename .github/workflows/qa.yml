@@ -17,15 +17,12 @@ jobs:
       run: go get .
 
     - name: Lint
-      run:
-        - go fmt
-        - cd src && go fmt
+      run: go fmt && go fmt ./src
 
     - name: Test
-      run:
-        - cd .. && go test -v ./...
+      run: go test -v 
 
     - name: Build
-      run:
-        - go build -v ./...
+      run: go build -o lckbx -v
+      working-directory: ./src
 
