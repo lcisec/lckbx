@@ -54,7 +54,7 @@ func (i *ItemList) DeleteItem() {
 	if i.current == nil {
 		return
 	}
-	
+
 	log.Printf("Deleting NoteItem: %s", i.current.ItemId)
 
 	err := i.ub.DeleteItem(i.current.ItemId)
