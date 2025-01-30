@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	//"time"
+	"fmt"
 
 	"lckbx"
 
@@ -178,6 +178,7 @@ func buildLoginScreen() fyne.CanvasObject {
 					center.Refresh()
 				} else {
 					il = NewItemList(&unlocked)
+					w.SetTitle(fmt.Sprintf("LckBx - %s", username.Text))
 					log.Printf("Successfully logged in as %s", username.Text)
 					center.Objects[0] = buildUnlockedScreen()
 					center.Refresh()
