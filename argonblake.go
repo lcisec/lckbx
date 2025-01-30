@@ -2,6 +2,7 @@ package lckbx
 
 import (
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/blake2b"
@@ -22,7 +23,7 @@ func (a argonBlakeDerive) DeriveBaseKey(username, passphrase string) (BaseKey, e
 	var bk BaseKey
 
 	// Normalize our username and password
-	username = norm.NFKD.String(username)
+	username = strings.ToLower(norm.NFKD.String(username))
 	passphrase = norm.NFKD.String(passphrase)
 
 	// Verify password length
