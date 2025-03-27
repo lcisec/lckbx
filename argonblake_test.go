@@ -43,15 +43,6 @@ func testArgonBlakeDeriveBaseKey(t *testing.T) {
 	if bk.String() != argonBlakeBaseKey {
 		t.Fatal("Expected", argonBlakeBaseKey, ", received", bk.String())
 	}
-
-	ubk, err := deriver.DeriveBaseKey(strings.ToUpper(deriveUsername), deriveGoodPassword)
-	if err != nil {
-		t.Fatal("Expected no error, received", err)
-	}
-
-	if ubk.String() != argonBlakeBaseKey {
-		t.Fatal("Expected", argonBlakeBaseKey, ", received", ubk.String())
-	}
 }
 
 func testArgonBlakeDeriveAuthKey(t *testing.T) {

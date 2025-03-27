@@ -2,11 +2,9 @@ package lckbx
 
 import (
 	"fmt"
-	"strings"
 
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/text/unicode/norm"
 )
 
 // argonBlakeDerive implements the deriver interface using Argon2 and Blake2b.
@@ -21,10 +19,6 @@ type argonBlakeDerive struct {
 // DeriveBaseKey takes a username and passphrase and returns a BaseKey.
 func (a argonBlakeDerive) DeriveBaseKey(username, passphrase string) (BaseKey, error) {
 	var bk BaseKey
-
-	// Normalize our username and password
-	username = strings.ToLower(norm.NFKD.String(username))
-	passphrase = norm.NFKD.String(passphrase)
 
 	// Verify password length
 	if len(passphrase) < minPassphraseLength {
