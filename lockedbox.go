@@ -2,6 +2,9 @@ package lckbx
 
 import (
 	"fmt"
+	"strings"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 type LockedBox struct {
@@ -17,7 +20,12 @@ type LockedBox struct {
 //  4. Store the Metadata encrypted with the Metadata key derived from the
 //     keyset.
 func (l *LockedBox) Register(username, password string) error {
-	// 1. Create a new User, Keyset, and Metadata.
+	// 1.  Create a new User, Keyset, and Metadata.
+	// 1.a Normalize the username and password.
+	username = strings.ToLower(norm.NFKD.String(username))
+	password = norm.NFKD.String(password)
+
+	// 1.b Create the user, keyset, and metadata objects.
 	user := NewUser(username)
 	keyset := NewKeyset(user.KeysetId)
 	metadata := NewMetadata(user.MetadataId)
@@ -90,6 +98,10 @@ func (l *LockedBox) Login(username, password string) (UnlockedBox, error) {
 	var ub UnlockedBox
 
 	// 1.  Get the UserId from the database using the given username.
+	// Normalize our username and password
+	username = strings.ToLower(norm.NFKD.String(username))
+	password = norm.NFKD.String(password)
+
 	userId := l.store.GetUserId(username)
 
 	// 2.  Derive an AuthToken, AuthKey, and CryptKey for the user.
@@ -165,6 +177,11 @@ func (l *LockedBox) Login(username, password string) (UnlockedBox, error) {
 //  5. Save the Metadata encrypted with the new Metadata key in the keyset.
 func (l *LockedBox) ChangePassword(username, oldPassword, newPassword string) error {
 	// 1.  Login to get an UnlockedBox
+	// Normalize our username and password
+	username = strings.ToLower(norm.NFKD.String(username))
+	oldPassword = norm.NFKD.String(oldPassword)
+	newPassword = norm.NFKD.String(newPassword)
+
 	ub, err := l.Login(username, oldPassword)
 	if err != nil {
 		return fmt.Errorf("could not LockedBox.ChangePassword: %v", err)
