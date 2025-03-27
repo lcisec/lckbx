@@ -2,7 +2,6 @@ package lckbx
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 )
 

@@ -52,7 +52,7 @@ func testRegister(t *testing.T) {
 
 	// Register the same user with a different case.
 	err = lb.Register(strings.ToUpper(lockedBoxUser), lockedBoxGoodPassword)
-	if err != nil {
+	if err == nil {
 		t.Fatalf("Expected error for existing uppercase user, received nil")
 	}
 }
